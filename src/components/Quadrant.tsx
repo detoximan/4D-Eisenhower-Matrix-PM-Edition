@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { Quadrant as QuadrantKind, Task } from '../core/types.ts';
 import { QUADRANT_META } from '../core/types.ts';
 import { TaskCard } from './TaskCard.tsx';
@@ -7,21 +6,21 @@ type Props = {
   kind: QuadrantKind;
   tasks: Task[];
   today: string;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 };
 
-export function Quadrant({ kind, tasks, today }: Props) {
+export function Quadrant({ kind, tasks, today, collapsed, onToggleCollapsed }: Props) {
   const meta = QUADRANT_META[kind];
-  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <section
       className={`em-quadrant em-quadrant-${kind.toLowerCase()}`}
-      style={{ borderTopColor: meta.accent }}
       aria-label={meta.label}
     >
       <header
         className="em-quadrant-header"
-        onClick={() => setCollapsed((v) => !v)}
+        onClick={onToggleCollapsed}
         role="button"
         aria-expanded={!collapsed}
       >

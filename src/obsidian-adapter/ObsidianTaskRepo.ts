@@ -1,7 +1,9 @@
 import type { App, TFile } from 'obsidian';
 import { parseAllTasks, parseDaily } from '../core/parser.ts';
 import type { Task } from '../core/types.ts';
-import { buildDailyNotePath } from './dailyNotes.ts';
+import { buildDailyNotePath, getDailyNotesFolder } from './dailyNotes.ts';
+
+const DATE_FILE_RE = /^(\d{4}-\d{2}-\d{2})\.md$/;
 
 /**
  * Read-only přístup k taskům přes Obsidian Vault API.
@@ -92,5 +94,28 @@ export class ObsidianTaskRepo {
 
   setExcludedFolders(folders: string[]) {
     this.excludedFolders = folders;
+  }
+
+  /**
+   * Vrátí množinu ISO dat (YYYY-MM-DD), pro která existuje daily note ve
+   * folderu konfigurovaném core pluginem „Daily notes". Slouží pro zelený
+   * markder u šipek v DateNav.
+   */
+  getExistingDailyDates(): Set<string> {
+    const folder = getDailyNotesFolder(this.app);
+    const dates = new Set<string>();
+    const files = this.app.vault.getMarkdownFiles();
+    for (const f of files) {
+      const expectedDir = folder; // může být prázdný string = root
+      const fileDir = f.parent?.path ?? '';
+      // Akceptujeme jen soubory v daily folderu (přesná shoda nadřazené složky).
+      // Pro root daily folder ("") = parent.path je "/" nebo "".
+      const inFolder =
+        expectedDir === '' ? (fileDir === '' || fileDir === '/') : fileDir === expectedDir;
+      if (!inFolder) continue;
+      const m = DATE_FILE_RE.exec(f.name);
+      if (m) dates.add(m[1]);
+    }
+    return dates;
   }
 }

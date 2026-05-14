@@ -6,9 +6,11 @@ import { Quadrant } from './Quadrant.tsx';
 type Props = {
   tasks: Task[];
   today: string;
+  collapsed: Record<QuadrantKind, boolean>;
+  onToggleCollapsed: (q: QuadrantKind) => void;
 };
 
-export function Matrix({ tasks, today }: Props) {
+export function Matrix({ tasks, today, collapsed, onToggleCollapsed }: Props) {
   const tasksByQuadrant = useMemo(() => {
     const map: Record<QuadrantKind, Task[]> = {
       DO: [],
@@ -27,11 +29,24 @@ export function Matrix({ tasks, today }: Props) {
     <div className="em-matrix">
       <div className="em-matrix-grid">
         {QUADRANTS.filter((q) => q !== 'OPEN').map((q) => (
-          <Quadrant key={q} kind={q} tasks={tasksByQuadrant[q]} today={today} />
+          <Quadrant
+            key={q}
+            kind={q}
+            tasks={tasksByQuadrant[q]}
+            today={today}
+            collapsed={collapsed[q]}
+            onToggleCollapsed={() => onToggleCollapsed(q)}
+          />
         ))}
       </div>
       <div className="em-matrix-open">
-        <Quadrant kind="OPEN" tasks={tasksByQuadrant.OPEN} today={today} />
+        <Quadrant
+          kind="OPEN"
+          tasks={tasksByQuadrant.OPEN}
+          today={today}
+          collapsed={collapsed.OPEN}
+          onToggleCollapsed={() => onToggleCollapsed('OPEN')}
+        />
       </div>
     </div>
   );

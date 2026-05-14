@@ -13,19 +13,32 @@
   display: flex;
   flex-direction: column;
   gap: var(--size-4-3);
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 /* === Header === */
 .em-header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--size-4-3);
   flex-wrap: wrap;
   padding-bottom: var(--size-2-2);
   border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.em-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-3);
+  flex-wrap: wrap;
+}
+
+.em-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-3);
+  flex-wrap: wrap;
 }
 
 .em-title {
@@ -34,12 +47,14 @@
   color: var(--text-normal);
 }
 
-.em-meta {
-  display: flex;
-  gap: var(--size-4-2);
+.em-subtitle {
+  margin: 0;
   font-size: var(--font-ui-small);
   color: var(--text-muted);
-  align-items: baseline;
+}
+
+.em-warn {
+  color: var(--color-orange);
 }
 
 .em-loading {
@@ -50,6 +65,229 @@
 .em-stats {
   color: var(--text-faint);
   font-family: var(--font-monospace);
+}
+
+.em-btn-link {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
+.em-btn-link:hover {
+  color: var(--text-normal);
+}
+
+.em-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-2-1);
+  font-size: var(--font-ui-small);
+  color: var(--text-normal);
+  cursor: pointer;
+  user-select: none;
+}
+
+.em-toggle input {
+  margin: 0;
+}
+
+/* === DateNav === */
+.em-datenav {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-2-1);
+  font-size: var(--font-ui-small);
+}
+
+.em-dn-btn,
+.em-dn-date,
+.em-dn-today {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-normal);
+  padding: 2px var(--size-2-2);
+  border-radius: var(--radius-s);
+  cursor: pointer;
+  font-size: var(--font-ui-small);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.em-dn-btn:hover,
+.em-dn-date:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+.em-dn-date {
+  font-family: var(--font-monospace);
+}
+
+.em-dn-today {
+  background-color: var(--background-modifier-hover);
+  margin-left: var(--size-2-1);
+}
+
+.em-dn-today:hover {
+  background-color: var(--background-modifier-border);
+}
+
+.em-dn-dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--color-green);
+  vertical-align: middle;
+}
+
+.em-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* === FilterBar === */
+.em-filterbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--size-2-1);
+  padding: var(--size-2-2);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background-color: var(--background-secondary);
+}
+
+.em-filterbar-label {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  margin-right: var(--size-2-1);
+  user-select: none;
+}
+
+.em-chip {
+  font-size: var(--font-ui-smaller);
+  padding: 2px var(--size-2-2);
+  border-radius: var(--radius-s);
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-primary);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: var(--font-monospace);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.em-chip:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.em-chip-active {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-color: var(--interactive-accent);
+}
+
+.em-chip-active:hover {
+  background-color: var(--interactive-accent-hover);
+  color: var(--text-on-accent);
+}
+
+.em-chip-untagged {
+  font-family: inherit;
+  font-style: italic;
+}
+
+.em-chip-count {
+  opacity: 0.6;
+  font-weight: var(--font-normal);
+}
+
+.em-filterbar-sep {
+  color: var(--text-faint);
+  user-select: none;
+}
+
+.em-filterbar-clear {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
+.em-filterbar-clear:hover {
+  color: var(--text-normal);
+}
+
+.em-filterbar-stats {
+  margin-left: auto;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  font-family: var(--font-monospace);
+  user-select: none;
+}
+
+/* === Day-cutoff banner === */
+.em-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--size-4-3);
+  padding: var(--size-2-3);
+  border-radius: var(--radius-s);
+  flex-wrap: wrap;
+  font-size: var(--font-ui-small);
+}
+
+.em-banner-warn {
+  background-color: color-mix(in srgb, var(--color-orange) 12%, var(--background-primary));
+  border: 1px solid var(--color-orange);
+  color: var(--text-normal);
+}
+
+.em-banner-actions {
+  display: flex;
+  gap: var(--size-2-2);
+}
+
+.em-btn-primary {
+  background-color: var(--color-orange);
+  color: white;
+  border: none;
+  padding: 4px var(--size-4-2);
+  border-radius: var(--radius-s);
+  cursor: pointer;
+  font-size: var(--font-ui-smaller);
+}
+
+.em-btn-secondary {
+  background: none;
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-normal);
+  padding: 4px var(--size-4-2);
+  border-radius: var(--radius-s);
+  cursor: pointer;
+  font-size: var(--font-ui-smaller);
+}
+
+.em-btn-secondary:hover {
+  background-color: var(--background-modifier-hover);
 }
 
 /* === Banners === */
@@ -98,6 +336,31 @@
   display: flex;
   flex-direction: column;
   min-height: 80px;
+}
+
+/*
+ * Subtle barevný tint per kvadrant — mix 7 % accent barvy s primary background.
+ * V dark mode automaticky tmavší (background-primary je dark), v light mode světlý.
+ */
+.em-quadrant-do {
+  background-color: color-mix(in srgb, var(--color-red) 7%, var(--background-primary));
+  border-top-color: var(--color-red);
+}
+.em-quadrant-decide {
+  background-color: color-mix(in srgb, var(--color-blue) 7%, var(--background-primary));
+  border-top-color: var(--color-blue);
+}
+.em-quadrant-delegate {
+  background-color: color-mix(in srgb, var(--color-green) 7%, var(--background-primary));
+  border-top-color: var(--color-green);
+}
+.em-quadrant-delete {
+  background-color: color-mix(in srgb, var(--color-yellow) 7%, var(--background-primary));
+  border-top-color: var(--color-yellow);
+}
+.em-quadrant-open {
+  background-color: var(--background-secondary);
+  border-top-color: var(--text-muted);
 }
 
 .em-quadrant-header {
@@ -156,19 +419,21 @@
   font-size: var(--font-ui-small);
 }
 
+/*
+ * Task list — responsive podle ŠÍŘKY KVADRANTU (ne okna):
+ * auto-fit + minmax(240px, 1fr) znamená:
+ *   - každý task má min. 240 px šířky
+ *   - sloupců je tolik, kolik se vejde
+ *   - širší kvadrant = víc sloupců (až 3-4 vedle sebe na 4K monitoru)
+ *   - užší kvadrant = méně sloupců, dolů až na 1
+ */
 .em-task-list {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--size-2-3);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--size-2-2);
   padding: 0;
   margin: 0;
   list-style: none;
-}
-
-@media (max-width: 900px) {
-  .em-task-list {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* === Task card === */
@@ -176,11 +441,12 @@
   background-color: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
   border-radius: var(--radius-s);
-  padding: var(--size-2-2);
+  padding: var(--size-2-1) var(--size-2-2);
 }
 
 .em-task-overdue {
   border-color: var(--color-red);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-red) 35%, transparent);
 }
 
 .em-task-row {
@@ -256,9 +522,13 @@
   font-family: var(--font-monospace);
 }
 
+/*
+ * Overdue badge — saturovaný červený mix, ne theme-derived "muted error".
+ * Drží vysoký kontrast i v custom themes (Minimal, Things, AnuPpuccin…).
+ */
 .em-badge-overdue {
-  background-color: var(--background-modifier-error);
-  color: var(--text-error);
+  background-color: color-mix(in srgb, var(--color-red) 22%, var(--background-primary));
+  color: var(--color-red);
   border-color: var(--color-red);
-  font-weight: var(--font-semibold);
+  font-weight: var(--font-bold);
 }

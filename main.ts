@@ -1,11 +1,15 @@
 import { Plugin, WorkspaceLeaf } from 'obsidian';
 import { MatrixView, VIEW_TYPE_MATRIX } from './src/view/MatrixView.ts';
+import { DEFAULT_SETTINGS, type PluginSettings } from './src/settings/settings.ts';
 
 export default class EisenhowerMatrixPlugin extends Plugin {
+  settings: PluginSettings = DEFAULT_SETTINGS;
+
   async onload(): Promise<void> {
     console.log('[Eisenhower Matrix] loading plugin');
+    await this.loadSettings();
 
-    this.registerView(VIEW_TYPE_MATRIX, (leaf) => new MatrixView(leaf));
+    this.registerView(VIEW_TYPE_MATRIX, (leaf) => new MatrixView(leaf, this));
 
     this.addRibbonIcon('layout-grid', 'Open Eisenhower Matrix', () => {
       void this.activateView();
@@ -24,9 +28,23 @@ export default class EisenhowerMatrixPlugin extends Plugin {
     console.log('[Eisenhower Matrix] unloading plugin');
   }
 
-  /**
-   * Otevři view v hlavním panelu. Pokud už existuje, jen ho zaměř.
-   */
+  async loadSettings(): Promise<void> {
+    const loaded = (await this.loadData()) as Partial<PluginSettings> | null;
+    this.settings = {
+      ...DEFAULT_SETTINGS,
+      ...(loaded ?? {}),
+      // collapsedQuadrants je objekt, deep-merge ručně aby chyběl-key nepřepsal default
+      collapsedQuadrants: {
+        ...DEFAULT_SETTINGS.collapsedQuadrants,
+        ...(loaded?.collapsedQuadrants ?? {}),
+      },
+    };
+  }
+
+  async saveSettings(): Promise<void> {
+    await this.saveData(this.settings);
+  }
+
   private async activateView(): Promise<void> {
     const { workspace } = this.app;
 
