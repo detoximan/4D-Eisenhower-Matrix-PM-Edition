@@ -12,6 +12,7 @@ type Props = {
   task: Task;
   today: string;
   graceExpiresAt?: number;
+  isActiveDrag: boolean;
   onToggle: () => void;
   onSetDueDate: (newDueDate: string | null) => Promise<void>;
   onUpdateTask: (
@@ -25,6 +26,7 @@ export function TaskCard({
   task,
   today,
   graceExpiresAt,
+  isActiveDrag,
   onToggle,
   onSetDueDate,
   onUpdateTask,
@@ -59,7 +61,9 @@ export function TaskCard({
       onDoubleClick={enterEdit}
       className={`em-task ${overdue ? 'em-task-overdue' : ''} ${
         inGrace ? 'em-task-grace' : ''
-      } ${editing ? 'em-task-editing' : ''} ${task.checked && !editing ? 'em-task-checked' : ''}`}
+      } ${editing ? 'em-task-editing' : ''} ${task.checked && !editing ? 'em-task-checked' : ''} ${
+        isActiveDrag ? 'em-task-active-drag' : ''
+      }`}
       title={editing ? undefined : 'Dvojklik pro editaci'}
     >
       {editing ? (

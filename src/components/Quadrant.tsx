@@ -10,6 +10,7 @@ type Props = {
   tasks: Task[];
   today: string;
   collapsed: boolean;
+  activeTaskId: string | null;
   onToggleCollapsed: () => void;
   graceMap: Map<string, number>;
   onToggleTask: (task: Task) => void;
@@ -33,6 +34,7 @@ export function Quadrant({
   tasks,
   today,
   collapsed,
+  activeTaskId,
   onToggleCollapsed,
   graceMap,
   onToggleTask,
@@ -109,6 +111,7 @@ export function Quadrant({
                     task={t}
                     today={today}
                     graceExpiresAt={graceMap.get(key)}
+                    isActiveDrag={activeTaskId === key}
                     onToggle={() => onToggleTask(t)}
                     onSetDueDate={(d) => onSetDueDate(t, d)}
                     onUpdateTask={(text, tags, opts) => onUpdateTask(t, text, tags, opts)}

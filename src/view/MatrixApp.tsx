@@ -463,6 +463,9 @@ export function MatrixApp({ app, repo, plugin }: Props) {
           today={today}
           collapsed={collapsed}
           graceMap={graceMap}
+          activeTaskId={
+            activeTask ? taskKey(activeTask.sourceFile, activeTask.lineIndex) : null
+          }
           onToggleCollapsed={toggleQuadrantCollapsed}
           onToggleTask={handleToggle}
           onSetDueDate={handleSetDueDate}

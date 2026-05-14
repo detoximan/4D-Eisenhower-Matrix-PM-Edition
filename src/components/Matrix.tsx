@@ -8,6 +8,7 @@ type Props = {
   today: string;
   collapsed: Record<QuadrantKind, boolean>;
   graceMap: Map<string, number>;
+  activeTaskId: string | null;
   onToggleCollapsed: (q: QuadrantKind) => void;
   onToggleTask: (task: Task) => void;
   onSetDueDate: (task: Task, newDueDate: string | null) => Promise<void>;
@@ -48,6 +49,7 @@ export function Matrix(props: Props) {
       today={props.today}
       collapsed={props.collapsed[q]}
       graceMap={props.graceMap}
+      activeTaskId={props.activeTaskId}
       onToggleCollapsed={() => props.onToggleCollapsed(q)}
       onToggleTask={props.onToggleTask}
       onSetDueDate={props.onSetDueDate}

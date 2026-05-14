@@ -505,6 +505,16 @@
   color: var(--text-muted);
 }
 
+/*
+ * Originál tasku během aktivního drágu — zešedne, aby uživatel viděl,
+ * který task se přesouvá. Řízeno přes activeTaskId z parentu (deterministické,
+ * žádný "stuck state" risk jako kdyby šlo o useDraggable.isDragging).
+ */
+.em-task-active-drag {
+  opacity: 0.35;
+  filter: grayscale(0.5);
+}
+
 .em-task-grace {
   border-color: var(--color-green);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-green) 35%, transparent);
