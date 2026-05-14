@@ -52,6 +52,9 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     plugin.settings.collapsedQuadrants,
   );
   const [showCompleted, setShowCompleted] = useState<boolean>(plugin.settings.showCompleted);
+  const [headerCollapsed, setHeaderCollapsed] = useState<boolean>(
+    plugin.settings.headerCollapsed,
+  );
   const [dayChangedBanner, setDayChangedBanner] = useState<string | null>(() => {
     const last = plugin.settings.lastOpenedDate;
     return last && last !== today ? last : null;
@@ -83,6 +86,11 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     plugin.settings.showCompleted = showCompleted;
     void plugin.saveSettings();
   }, [showCompleted, plugin]);
+
+  useEffect(() => {
+    plugin.settings.headerCollapsed = headerCollapsed;
+    void plugin.saveSettings();
+  }, [headerCollapsed, plugin]);
 
   // === Data fetching ===
   const refetchTimerRef = useRef<number | null>(null);
@@ -387,6 +395,22 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   return (
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
       <div className="em-app">
+        {headerCollapsed ? (
+          <div className="em-app-header em-app-header-compact">
+            <span className="em-compact-info">
+              ⚡ Eisenhower Matrix · {tasks.length} tasků
+            </span>
+            <button
+              type="button"
+              onClick={() => setHeaderCollapsed(false)}
+              className="em-header-collapse-btn"
+              title="Rozbalit hlavičku"
+              aria-label="Rozbalit hlavičku"
+            >
+              ▼
+            </button>
+          </div>
+        ) : (
         <div className="em-app-header">
         <header className="em-header">
           <div className="em-header-left">
@@ -414,6 +438,15 @@ export function MatrixApp({ app, repo, plugin }: Props) {
               />
               <span>Hotové</span>
             </label>
+            <button
+              type="button"
+              onClick={() => setHeaderCollapsed(true)}
+              className="em-header-collapse-btn"
+              title="Sbalit celou hlavičku (uvolní místo)"
+              aria-label="Sbalit hlavičku"
+            >
+              ▲
+            </button>
           </div>
         </header>
 
@@ -475,6 +508,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
           filteredCount={sortedVisibleTasks.length}
         />
         </div>
+        )}
 
         <div className="em-app-body">
         <Matrix

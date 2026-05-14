@@ -18,6 +18,11 @@ export type PluginSettings = {
    * z core pluginu „Daily notes". Cesta relativní k vault rootu.
    */
   dailyFolderOverride: string;
+  /**
+   * Skrytí horní hlavičky (titulek + datum nav + filter bar + subtitle).
+   * Užitečné na mobilu, kde header zabírá moc místa. Stav persistovaný.
+   */
+  headerCollapsed: boolean;
 };
 
 export const DEFAULT_SETTINGS: PluginSettings = {
@@ -33,4 +38,5 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   lastOpenedDate: null,
   excludedFolders: ['_templates', '1_Agents'],
   dailyFolderOverride: '',
+  headerCollapsed: false,
 };
