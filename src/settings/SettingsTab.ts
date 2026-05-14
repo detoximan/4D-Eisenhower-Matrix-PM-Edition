@@ -1,6 +1,7 @@
 import { type App, PluginSettingTab, Setting } from 'obsidian';
 import type EisenhowerMatrixPlugin from '../../main.ts';
 import { getDailyNotesFolder } from '../obsidian-adapter/dailyNotes.ts';
+import { FolderSuggest } from './FolderSuggest.ts';
 
 export class MatrixSettingsTab extends PluginSettingTab {
   constructor(
@@ -25,7 +26,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
       .setDesc(
         `Složka, kam plugin ukládá nové daily notes. Necháš-li prázdné, použije se konfigurace z core pluginu „Daily notes" — momentálně ${coreLabel}.`,
       )
-      .addText((text) =>
+      .addText((text) => {
         text
           .setPlaceholder('např. 6_Daily-Tasks (nebo prázdné)')
           .setValue(this.plugin.settings.dailyFolderOverride)
@@ -33,33 +34,19 @@ export class MatrixSettingsTab extends PluginSettingTab {
             this.plugin.settings.dailyFolderOverride = value.trim();
             await this.plugin.saveSettings();
             this.plugin.notifyRepoConfigChanged();
-          }),
-      );
+          });
+        new FolderSuggest(this.app, text.inputEl);
+      });
 
-    // === Excluded folders ===
-    new Setting(containerEl)
-      .setName('Vyloučené složky')
-      .setDesc(
-        'Složky, jejichž tasky se ignorují (templates, agents apod.). Čárkou oddělené.',
-      )
-      .addText((text) =>
-        text
-          .setPlaceholder('_templates, 1_Agents')
-          .setValue(this.plugin.settings.excludedFolders.join(', '))
-          .onChange(async (value) => {
-            this.plugin.settings.excludedFolders = value
-              .split(',')
-              .map((s) => s.trim())
-              .filter((s) => s.length > 0);
-            await this.plugin.saveSettings();
-            this.plugin.notifyRepoConfigChanged();
-          }),
-      );
+    // === Excluded folders (Obsidian-native pattern: rows + add input) ===
+    this.renderExcludedFoldersSection(containerEl);
 
-    // === Reset to defaults ===
+    // === Reset ===
     new Setting(containerEl)
       .setName('Resetovat na výchozí')
-      .setDesc('Smaže overrides — daily folder se vrátí na core config, excluded folders na _templates + 1_Agents.')
+      .setDesc(
+        'Smaže overrides — daily folder se vrátí na core config, excluded folders na _templates + 1_Agents.',
+      )
       .addButton((btn) =>
         btn
           .setButtonText('Reset')
@@ -69,8 +56,87 @@ export class MatrixSettingsTab extends PluginSettingTab {
             this.plugin.settings.excludedFolders = ['_templates', '1_Agents'];
             await this.plugin.saveSettings();
             this.plugin.notifyRepoConfigChanged();
-            this.display(); // re-render
+            this.display();
           }),
       );
+  }
+
+  /**
+   * Vyloučené složky — list řádků s × + input se suggesterem + Přidat.
+   * Vzor: native Obsidian "Vyloučené soubory" dialog.
+   */
+  private renderExcludedFoldersSection(parent: HTMLElement): void {
+    const section = parent.createDiv({ cls: 'em-settings-excluded' });
+
+    section.createEl('h3', { text: 'Vyloučené složky' });
+    section.createEl('p', {
+      text: 'Tasky z těchto složek se v matici nezobrazují. Klikni × pro odebrání, nebo přidej novou složku dole.',
+      cls: 'setting-item-description',
+    });
+
+    const list = section.createDiv({ cls: 'em-excluded-list' });
+
+    const folders = this.plugin.settings.excludedFolders;
+    if (folders.length === 0) {
+      list.createDiv({
+        cls: 'em-excluded-empty',
+        text: 'Žádné vyloučené složky.',
+      });
+    } else {
+      for (const folder of folders) {
+        const row = list.createDiv({ cls: 'em-excluded-row' });
+        row.createSpan({ text: folder, cls: 'em-excluded-path' });
+        const removeBtn = row.createEl('button', {
+          cls: 'em-excluded-remove',
+          attr: { 'aria-label': `Odebrat ${folder}` },
+          text: '×',
+        });
+        removeBtn.addEventListener('click', async () => {
+          this.plugin.settings.excludedFolders = folders.filter((f) => f !== folder);
+          await this.plugin.saveSettings();
+          this.plugin.notifyRepoConfigChanged();
+          this.display();
+        });
+      }
+    }
+
+    // Add row
+    const addRow = section.createDiv({ cls: 'em-excluded-add' });
+    const addInput = addRow.createEl('input', {
+      type: 'text',
+      cls: 'em-excluded-input',
+      attr: { placeholder: 'Přidej složku…' },
+    });
+    new FolderSuggest(this.app, addInput);
+
+    const addBtn = addRow.createEl('button', {
+      cls: 'mod-cta em-excluded-add-btn',
+      text: 'Přidat',
+    });
+
+    const tryAdd = async () => {
+      const value = addInput.value.trim();
+      if (!value) return;
+      const existing = this.plugin.settings.excludedFolders.map((f) => f.toLowerCase());
+      if (existing.includes(value.toLowerCase())) {
+        addInput.value = '';
+        return;
+      }
+      this.plugin.settings.excludedFolders = [
+        ...this.plugin.settings.excludedFolders,
+        value,
+      ];
+      await this.plugin.saveSettings();
+      this.plugin.notifyRepoConfigChanged();
+      this.display();
+    };
+
+    addBtn.addEventListener('click', tryAdd);
+    addInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        void tryAdd();
+      }
+    });
   }
 }

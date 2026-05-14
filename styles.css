@@ -886,3 +886,83 @@
   border-left: 4px solid var(--color-red);
   color: var(--text-normal);
 }
+
+/* === Settings: Excluded folders list === */
+.em-settings-excluded {
+  border-top: 1px solid var(--background-modifier-border);
+  padding-top: var(--size-4-2);
+  margin-top: var(--size-4-2);
+}
+
+.em-settings-excluded h3 {
+  margin: 0 0 var(--size-2-1);
+  font-size: var(--font-ui-medium);
+  color: var(--text-normal);
+}
+
+.em-excluded-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-1);
+  margin: var(--size-2-3) 0;
+}
+
+.em-excluded-empty {
+  font-style: italic;
+  color: var(--text-faint);
+  font-size: var(--font-ui-small);
+  padding: var(--size-2-2) 0;
+}
+
+.em-excluded-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--size-2-2) var(--size-4-2);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  background-color: var(--background-secondary);
+}
+
+.em-excluded-path {
+  font-family: var(--font-monospace);
+  font-size: var(--font-ui-small);
+  color: var(--text-normal);
+}
+
+.em-excluded-remove {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: var(--font-ui-large);
+  line-height: 1;
+  padding: 0 var(--size-2-2);
+  border-radius: var(--radius-s);
+}
+
+.em-excluded-remove:hover {
+  color: var(--color-red);
+  background-color: var(--background-modifier-hover);
+}
+
+.em-excluded-add {
+  display: flex;
+  gap: var(--size-2-2);
+  align-items: center;
+  margin-top: var(--size-2-3);
+}
+
+.em-excluded-input {
+  flex: 1;
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  padding: 4px var(--size-2-2);
+  font-size: var(--font-ui-small);
+}
+
+.em-excluded-add-btn {
+  flex-shrink: 0;
+}
