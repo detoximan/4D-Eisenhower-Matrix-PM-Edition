@@ -1,0 +1,10 @@
+{
+  "id": "eisenhower-matrix",
+  "name": "Eisenhower Matrix",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "Visualize your tasks across markdown files in a 5-quadrant Eisenhower matrix (DO / DECIDE / DELEGATE / DELETE / OPEN). Reads and writes Obsidian Tasks syntax (#tags + 📅🛫✅ + priority emoji).",
+  "author": "Jaroslav Krčál",
+  "authorUrl": "https://github.com/krcaljaroslav",
+  "isDesktopOnly": false
+}

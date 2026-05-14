@@ -1,0 +1,264 @@
+/*
+ * Eisenhower Matrix plugin — styles.
+ * Používá Obsidian CSS variables (--background-primary, --text-normal, ...)
+ * pro vizuální konzistenci napříč theme.
+ */
+
+.eisenhower-matrix-root {
+  padding: var(--size-4-3);
+  overflow-y: auto;
+}
+
+.em-app {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-3);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* === Header === */
+.em-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--size-4-3);
+  flex-wrap: wrap;
+  padding-bottom: var(--size-2-2);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.em-title {
+  margin: 0;
+  font-size: var(--font-ui-large);
+  color: var(--text-normal);
+}
+
+.em-meta {
+  display: flex;
+  gap: var(--size-4-2);
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+  align-items: baseline;
+}
+
+.em-loading {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.em-stats {
+  color: var(--text-faint);
+  font-family: var(--font-monospace);
+}
+
+/* === Banners === */
+.em-error {
+  padding: var(--size-2-3);
+  background-color: var(--background-modifier-error);
+  color: var(--text-error);
+  border-radius: var(--radius-s);
+  font-size: var(--font-ui-small);
+}
+
+.em-info {
+  padding: var(--size-2-3);
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
+
+/* === Matrix grid === */
+.em-matrix {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+}
+
+.em-matrix-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--size-4-2);
+}
+
+@media (max-width: 720px) {
+  .em-matrix-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* === Quadrant === */
+.em-quadrant {
+  border: 1px solid var(--background-modifier-border);
+  border-top: 3px solid var(--text-muted);
+  border-radius: var(--radius-m);
+  background-color: var(--background-secondary);
+  display: flex;
+  flex-direction: column;
+  min-height: 80px;
+}
+
+.em-quadrant-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--size-2-2);
+  padding: var(--size-2-3) var(--size-4-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.em-quadrant-header:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+.em-collapse-icon {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  width: 12px;
+}
+
+.em-quadrant-title {
+  flex: 1;
+}
+
+.em-quadrant-title h3 {
+  margin: 0;
+  font-size: var(--font-ui-medium);
+  font-weight: var(--font-bold);
+  color: var(--text-normal);
+}
+
+.em-quadrant-title p {
+  margin: 0;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.em-quadrant-count {
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+  font-family: var(--font-monospace);
+}
+
+.em-quadrant-body {
+  padding: 0 var(--size-4-2) var(--size-4-2);
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.em-empty {
+  margin: 0;
+  padding: var(--size-2-2) 0;
+  font-style: italic;
+  color: var(--text-faint);
+  font-size: var(--font-ui-small);
+}
+
+.em-task-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--size-2-3);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+@media (max-width: 900px) {
+  .em-task-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* === Task card === */
+.em-task {
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  padding: var(--size-2-2);
+}
+
+.em-task-overdue {
+  border-color: var(--color-red);
+}
+
+.em-task-row {
+  display: flex;
+  gap: var(--size-2-2);
+  align-items: flex-start;
+}
+
+.em-task-checkbox {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.em-task-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.em-task-text {
+  margin: 0;
+  font-size: var(--font-ui-small);
+  line-height: 1.35;
+  color: var(--text-normal);
+  word-break: break-word;
+}
+
+.em-empty-text {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.em-task-source {
+  margin: var(--size-2-1) 0 0;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-faint);
+  font-family: var(--font-monospace);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.em-task-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-2-1);
+  margin-top: var(--size-2-1);
+}
+
+.em-tag {
+  font-size: var(--font-ui-smaller);
+  padding: 0 var(--size-2-1);
+  background-color: var(--background-modifier-hover);
+  color: var(--text-muted);
+  border-radius: var(--radius-s);
+  font-family: var(--font-monospace);
+}
+
+.em-priority {
+  font-size: var(--font-ui-smaller);
+  padding: 0 var(--size-2-1);
+  background-color: var(--background-primary-alt);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+}
+
+.em-badge {
+  font-size: var(--font-ui-smaller);
+  padding: 0 var(--size-2-1);
+  background-color: var(--background-primary-alt);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  color: var(--text-muted);
+  font-family: var(--font-monospace);
+}
+
+.em-badge-overdue {
+  background-color: var(--background-modifier-error);
+  color: var(--text-error);
+  border-color: var(--color-red);
+  font-weight: var(--font-semibold);
+}
