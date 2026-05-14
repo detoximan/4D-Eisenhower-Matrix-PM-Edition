@@ -1,0 +1,207 @@
+import { describe, expect, it } from 'vitest';
+import {
+  appendTaskUnderDnes,
+  buildTaskLine,
+  moveLineQuadrant,
+  setDueDateOnLine,
+  toggleLine,
+  transformLineInContent,
+  updateLineTextAndTags,
+} from '../src/core/lineOps.ts';
+
+describe('toggleLine', () => {
+  it('unchecked → checked + ✅ today', () => {
+    const r = toggleLine('- [ ] #DO hello', '2026-05-14');
+    expect(r.checked).toBe(true);
+    expect(r.newLine).toBe('- [x] #DO hello ✅ 2026-05-14');
+  });
+  it('checked → unchecked strips ✅', () => {
+    const r = toggleLine('- [x] #DO done ✅ 2026-05-10', '2026-05-14');
+    expect(r.checked).toBe(false);
+    expect(r.newLine).toBe('- [ ] #DO done');
+  });
+  it('throws on non-task line', () => {
+    expect(() => toggleLine('# Heading', '2026-05-14')).toThrow(/Not a task line/);
+  });
+});
+
+describe('buildTaskLine', () => {
+  it('DO with text only', () => {
+    expect(buildTaskLine('DO', 'hello', '2026-05-14')).toBe(
+      '- [ ] #DO 🛫 2026-05-14 hello',
+    );
+  });
+  it('OPEN — no prefix tag', () => {
+    expect(buildTaskLine('OPEN', 'capture', '2026-05-14')).toBe(
+      '- [ ] 🛫 2026-05-14 capture',
+    );
+  });
+  it('extracts leading context tags', () => {
+    expect(buildTaskLine('DO', '#Osobní #Work test', '2026-05-14')).toBe(
+      '- [ ] #DO #Osobní #Work 🛫 2026-05-14 test',
+    );
+  });
+  it('with due date + priority', () => {
+    expect(buildTaskLine('DO', 'urgent', '2026-05-14', '2026-05-20', 'highest')).toBe(
+      '- [ ] #DO 🔺 📅 2026-05-20 🛫 2026-05-14 urgent',
+    );
+  });
+  it('strips user-typed quadrant tags', () => {
+    expect(buildTaskLine('OPEN', '#DO misplaced', '2026-05-14')).toBe(
+      '- [ ] 🛫 2026-05-14 misplaced',
+    );
+  });
+});
+
+describe('moveLineQuadrant', () => {
+  it('replaces existing quadrant', () => {
+    const r = moveLineQuadrant('- [ ] #DO #Work hello', 'DECIDE');
+    expect(r.newLine).toBe('- [ ] #DECIDE #Work hello');
+  });
+  it('adds quadrant to OPEN task', () => {
+    const r = moveLineQuadrant('- [ ] #Work hello', 'DELEGATE');
+    expect(r.newLine).toBe('- [ ] #DELEGATE #Work hello');
+  });
+  it('removes quadrant when moving to OPEN', () => {
+    const r = moveLineQuadrant('- [ ] #DO #Work hello', 'OPEN');
+    expect(r.newLine).toBe('- [ ] #Work hello');
+  });
+});
+
+describe('setDueDateOnLine', () => {
+  it('adds 📅 when none', () => {
+    const r = setDueDateOnLine('- [ ] #DO hello', '2026-05-20');
+    expect(r.newLine).toBe('- [ ] #DO 📅 2026-05-20 hello');
+  });
+  it('replaces existing 📅', () => {
+    const r = setDueDateOnLine('- [ ] #DO 📅 2026-04-30 hello', '2026-05-20');
+    expect(r.newLine).toBe('- [ ] #DO 📅 2026-05-20 hello');
+  });
+  it('removes 📅 when null', () => {
+    const r = setDueDateOnLine('- [ ] #DO 📅 2026-04-30 hello', null);
+    expect(r.newLine).toBe('- [ ] #DO hello');
+  });
+});
+
+describe('updateLineTextAndTags', () => {
+  it('updates text + tags, preserves other parts', () => {
+    const r = updateLineTextAndTags(
+      '- [x] #DO #Work 📅 2026-05-20 🛫 2026-05-10 Send report ✅ 2026-05-15',
+      'Send weekly report',
+      ['#Urgent'],
+    );
+    expect(r.newLine).toBe(
+      '- [x] #DO #Urgent 📅 2026-05-20 🛫 2026-05-10 Send weekly report ✅ 2026-05-15',
+    );
+  });
+
+  it('tri-state dueDate: undefined preserves', () => {
+    const r = updateLineTextAndTags(
+      '- [ ] #DO 📅 2026-05-20 hello',
+      'hello',
+      [],
+      {},
+    );
+    expect(r.newLine).toBe('- [ ] #DO 📅 2026-05-20 hello');
+  });
+  it('tri-state dueDate: null clears', () => {
+    const r = updateLineTextAndTags(
+      '- [ ] #DO 📅 2026-05-20 hello',
+      'hello',
+      [],
+      { dueDate: null },
+    );
+    expect(r.newLine).toBe('- [ ] #DO hello');
+  });
+  it('tri-state dueDate: value sets', () => {
+    const r = updateLineTextAndTags(
+      '- [ ] #DO hello',
+      'hello',
+      [],
+      { dueDate: '2026-05-25' },
+    );
+    expect(r.newLine).toBe('- [ ] #DO 📅 2026-05-25 hello');
+  });
+
+  it('tri-state priority: set', () => {
+    const r = updateLineTextAndTags(
+      '- [ ] #DO hello',
+      'hello',
+      [],
+      { priority: 'high' },
+    );
+    expect(r.newLine).toBe('- [ ] #DO ⏫ hello');
+  });
+  it('tri-state priority: clear', () => {
+    const r = updateLineTextAndTags(
+      '- [ ] #DO ⏫ hello',
+      'hello',
+      [],
+      { priority: null },
+    );
+    expect(r.newLine).toBe('- [ ] #DO hello');
+  });
+
+  it('normalizes tags (prepend #, dedupe)', () => {
+    const r = updateLineTextAndTags(
+      '- [ ] #DO hello',
+      'hello',
+      ['Osobní', '#osobní', '#Work'],
+    );
+    expect(r.newLine).toBe('- [ ] #DO #Osobní #Work hello');
+  });
+});
+
+describe('appendTaskUnderDnes', () => {
+  it('inserts after existing tasks under # Dnes', () => {
+    const content = [
+      '---',
+      'date: 2026-05-14',
+      '---',
+      '',
+      '# Dnes',
+      '- [ ] #DO existing',
+      '',
+      '## Other',
+    ].join('\n');
+    const r = appendTaskUnderDnes(content, 'new task', 'DECIDE', '2026-05-14');
+    expect(r.lineIndex).toBe(6);
+    const lines = r.newContent.split('\n');
+    expect(lines[5]).toBe('- [ ] #DO existing');
+    expect(lines[6]).toBe('- [ ] #DECIDE 🛫 2026-05-14 new task');
+  });
+
+  it('creates # Dnes when missing', () => {
+    const content = [
+      '---',
+      'date: 2026-05-14',
+      '---',
+      '',
+      '# Notes',
+      'text',
+    ].join('\n');
+    const r = appendTaskUnderDnes(content, 'fresh', 'DO', '2026-05-14');
+    expect(r.newContent).toContain('# Dnes');
+    expect(r.newContent).toContain('- [ ] #DO 🛫 2026-05-14 fresh');
+  });
+});
+
+describe('transformLineInContent', () => {
+  it('replaces target line, preserves rest', () => {
+    const content = ['# Dnes', '- [ ] #DO a', '- [ ] #DO b'].join('\n');
+    const out = transformLineInContent(content, 1, (l) =>
+      toggleLine(l, '2026-05-14').newLine,
+    );
+    const lines = out.split('\n');
+    expect(lines[0]).toBe('# Dnes');
+    expect(lines[1]).toBe('- [x] #DO a ✅ 2026-05-14');
+    expect(lines[2]).toBe('- [ ] #DO b');
+  });
+  it('preserves CRLF when present', () => {
+    const content = ['- [ ] #DO a', '- [ ] #DO b'].join('\r\n');
+    const out = transformLineInContent(content, 0, (l) =>
+      toggleLine(l, '2026-05-14').newLine,
+    );
+    expect(out.includes('\r\n')).toBe(true);
+  });
+});

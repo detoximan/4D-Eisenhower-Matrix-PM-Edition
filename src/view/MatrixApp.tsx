@@ -1,7 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { App, EventRef } from 'obsidian';
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core';
 import type { ObsidianTaskRepo } from '../obsidian-adapter/ObsidianTaskRepo.ts';
-import type { Quadrant, Task } from '../core/types.ts';
+import { showError } from '../obsidian-adapter/toast.ts';
+import type { Priority, Quadrant, Task } from '../core/types.ts';
 import { QUADRANTS } from '../core/types.ts';
 import {
   extractAllContextTags,
@@ -12,6 +23,7 @@ import {
 import { Matrix } from '../components/Matrix.tsx';
 import { FilterBar } from '../components/FilterBar.tsx';
 import { DateNav } from '../components/DateNav.tsx';
+import { TaskCardOverlay, GRACE_MS } from '../components/TaskCard.tsx';
 import type EisenhowerMatrixPlugin from '../../main.ts';
 
 type Props = {
@@ -19,6 +31,10 @@ type Props = {
   repo: ObsidianTaskRepo;
   plugin: EisenhowerMatrixPlugin;
 };
+
+function taskKey(sourceFile: string, lineIndex: number): string {
+  return `${sourceFile}:${lineIndex}`;
+}
 
 export function MatrixApp({ app, repo, plugin }: Props) {
   const today = useMemo(() => formatDateISO(new Date()), []);
@@ -30,7 +46,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [existingDates, setExistingDates] = useState<Set<string>>(() => new Set());
 
-  // === Persisted settings (kopie do React state, sync přes plugin.saveSettings) ===
+  // Settings (persisted)
   const [selectedTags, setSelectedTags] = useState<string[]>(plugin.settings.selectedTags);
   const [collapsed, setCollapsed] = useState<Record<Quadrant, boolean>>(
     plugin.settings.collapsedQuadrants,
@@ -41,8 +57,11 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     return last && last !== today ? last : null;
   });
 
-  // Po otevření view zaznamenej dnešek jako last opened (pokud uživatel banner odbavil
-  // nebo banner vůbec neexistuje). Aby přežil reload, zapíšeme až po acknowledge.
+  // Grace period: map key (sourceFile:lineIndex) -> expiresAt timestamp
+  const [graceMap, setGraceMap] = useState<Map<string, number>>(() => new Map());
+  const [, setTick] = useState(0);
+
+  // Update last opened
   useEffect(() => {
     if (dayChangedBanner === null) {
       plugin.settings.lastOpenedDate = today;
@@ -50,7 +69,6 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     }
   }, [today, dayChangedBanner, plugin]);
 
-  // === Persist on change ===
   useEffect(() => {
     plugin.settings.selectedTags = selectedTags;
     void plugin.saveSettings();
@@ -97,7 +115,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     void refetch();
   }, [refetch]);
 
-  // Live sync — Obsidian Vault events
+  // Live sync
   useEffect(() => {
     const refs: EventRef[] = [];
     refs.push(app.vault.on('modify', scheduleRefetch));
@@ -110,15 +128,130 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     };
   }, [app, scheduleRefetch]);
 
+  // Grace period interval — clean expired keys + re-render
+  useEffect(() => {
+    if (graceMap.size === 0) return;
+    const interval = window.setInterval(() => {
+      const now = Date.now();
+      let mutated = false;
+      setGraceMap((prev) => {
+        const next = new Map(prev);
+        for (const [k, exp] of next) {
+          if (exp <= now) {
+            next.delete(k);
+            mutated = true;
+          }
+        }
+        return mutated ? next : prev;
+      });
+      setTick((t) => t + 1);
+    }, 250);
+    return () => window.clearInterval(interval);
+  }, [graceMap.size]);
+
+  // === Local optimistic mutations ===
+  const applyLocalToggle = useCallback(
+    (sourceFile: string, lineIndex: number, nextChecked: boolean) => {
+      const key = taskKey(sourceFile, lineIndex);
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.sourceFile === sourceFile && t.lineIndex === lineIndex
+            ? {
+                ...t,
+                checked: nextChecked,
+                doneDate: nextChecked ? today : undefined,
+              }
+            : t,
+        ),
+      );
+      if (nextChecked) {
+        setGraceMap((prev) => {
+          const next = new Map(prev);
+          next.set(key, Date.now() + GRACE_MS);
+          return next;
+        });
+      } else {
+        setGraceMap((prev) => {
+          if (!prev.has(key)) return prev;
+          const next = new Map(prev);
+          next.delete(key);
+          return next;
+        });
+      }
+    },
+    [today],
+  );
+
+  // === Write callbacks ===
+  const handleToggle = useCallback(
+    async (task: Task) => {
+      const nextChecked = !task.checked;
+      applyLocalToggle(task.sourceFile, task.lineIndex, nextChecked);
+      try {
+        await repo.toggleTask(task.sourceFile, task.lineIndex, today);
+      } catch (e) {
+        applyLocalToggle(task.sourceFile, task.lineIndex, task.checked);
+        showError(`Toggle selhal: ${String((e as Error).message ?? e)}`);
+      }
+    },
+    [repo, today, applyLocalToggle],
+  );
+
+  const handleSetDueDate = useCallback(
+    async (task: Task, newDueDate: string | null) => {
+      try {
+        await repo.setDueDate(task.sourceFile, task.lineIndex, newDueDate);
+      } catch (e) {
+        showError(`Změna termínu selhala: ${String((e as Error).message ?? e)}`);
+      }
+    },
+    [repo],
+  );
+
+  const handleUpdate = useCallback(
+    async (
+      task: Task,
+      text: string,
+      contextTags: string[],
+      options: { dueDate: string | null; priority: Priority | null },
+    ) => {
+      try {
+        await repo.updateTask(task.sourceFile, task.lineIndex, text, contextTags, options);
+      } catch (e) {
+        showError(`Uložení selhalo: ${String((e as Error).message ?? e)}`);
+        throw e;
+      }
+    },
+    [repo],
+  );
+
+  const handleAdd = useCallback(
+    async (input: {
+      text: string;
+      quadrant: Quadrant;
+      dueDate: string | null;
+      priority: Priority | null;
+    }) => {
+      try {
+        await repo.addTask(date, input.text, input.quadrant, input.dueDate, input.priority);
+      } catch (e) {
+        showError(`Přidání selhalo: ${String((e as Error).message ?? e)}`);
+        throw e;
+      }
+    },
+    [repo, date],
+  );
+
   // === Derived state ===
   const visibleTasks = useMemo(
     () =>
       tasks.filter((t) => {
         if (!matchesFilter(t, selectedTags)) return false;
         if (showCompleted) return true;
-        return !t.checked;
+        if (!t.checked) return true;
+        return graceMap.has(taskKey(t.sourceFile, t.lineIndex));
       }),
-    [tasks, selectedTags, showCompleted],
+    [tasks, selectedTags, showCompleted, graceMap],
   );
 
   const sortedVisibleTasks = useMemo(
@@ -136,7 +269,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     [tasks, showCompleted],
   );
 
-  // === Handlers ===
+  // === UI handlers ===
   const toggleTag = useCallback((tag: string) => {
     setSelectedTags((prev) =>
       prev.some((t) => t.toLowerCase() === tag.toLowerCase())
@@ -175,103 +308,172 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     [today, plugin],
   );
 
+  // === Drag & drop ===
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+  );
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+  const onDragStart = useCallback(
+    (e: DragStartEvent) => {
+      const id = String(e.active.id);
+      const t = tasks.find((x) => taskKey(x.sourceFile, x.lineIndex) === id);
+      setActiveTask(t ?? null);
+    },
+    [tasks],
+  );
+
+  const onDragEnd = useCallback(
+    async (e: DragEndEvent) => {
+      setActiveTask(null);
+      if (!e.over) return;
+
+      const draggedId = String(e.active.id);
+      const overId = String(e.over.id);
+      if (draggedId === overId) return;
+
+      const dragged = tasks.find((t) => taskKey(t.sourceFile, t.lineIndex) === draggedId);
+      if (!dragged) return;
+
+      // overId je vždy Quadrant kind (karty nejsou drop targety — useDraggable only)
+      if (!QUADRANTS.includes(overId as Quadrant)) return;
+
+      const targetQuadrant = overId as Quadrant;
+      if (dragged.quadrant === targetQuadrant) return;
+
+      // Optimistic update
+      setTasks((prev) =>
+        prev.map((t) =>
+          taskKey(t.sourceFile, t.lineIndex) === draggedId
+            ? { ...t, quadrant: targetQuadrant }
+            : t,
+        ),
+      );
+
+      try {
+        await repo.moveTask(dragged.sourceFile, dragged.lineIndex, targetQuadrant);
+      } catch (err) {
+        // rollback
+        setTasks((prev) =>
+          prev.map((t) =>
+            taskKey(t.sourceFile, t.lineIndex) === draggedId ? dragged : t,
+          ),
+        );
+        showError(`Přesun selhal: ${String((err as Error).message ?? err)}`);
+      }
+    },
+    [tasks, repo],
+  );
+
   const isPastOrFuture = date !== today;
 
   return (
-    <div className="em-app">
-      <header className="em-header">
-        <div className="em-header-left">
-          <h2 className="em-title">Eisenhower Matrix</h2>
-          <DateNav
-            date={date}
-            today={today}
-            existingDates={existingDates}
-            onChange={setDate}
-          />
-        </div>
-        <div className="em-header-right">
-          <button
-            type="button"
-            onClick={anyCollapsed ? expandAll : collapseAll}
-            className="em-btn-link"
-          >
-            {anyCollapsed ? 'Rozbalit vše' : 'Sbalit vše'}
-          </button>
-          <label className="em-toggle">
-            <input
-              type="checkbox"
-              checked={showCompleted}
-              onChange={(e) => setShowCompleted(e.target.checked)}
+    <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+      <div className="em-app">
+        <header className="em-header">
+          <div className="em-header-left">
+            <h2 className="em-title">Eisenhower Matrix</h2>
+            <DateNav
+              date={date}
+              today={today}
+              existingDates={existingDates}
+              onChange={setDate}
             />
-            <span>Hotové</span>
-          </label>
-        </div>
-      </header>
-
-      <p className="em-subtitle">
-        {formatCzechDate(date)}
-        {isPastOrFuture && <span className="em-warn"> (ne dnešek)</span>}
-        {loading && <span className="em-loading"> · načítám…</span>}
-        {!loading && (
-          <span className="em-stats">
-            {' '}· {tasks.length} tasků · skenováno {scannedFiles} souborů
-          </span>
-        )}
-      </p>
-
-      {dayChangedBanner && (
-        <div className="em-banner em-banner-warn">
-          <span>
-            Od posledního otevření (<strong>{dayChangedBanner}</strong>) je nový den.
-            Přepnout na dnešek (<strong>{today}</strong>)?
-          </span>
-          <div className="em-banner-actions">
-            <button
-              type="button"
-              onClick={() => acknowledgeDayChange(true)}
-              className="em-btn-primary"
-            >
-              Přepnout
-            </button>
-            <button
-              type="button"
-              onClick={() => acknowledgeDayChange(false)}
-              className="em-btn-secondary"
-            >
-              Zůstat
-            </button>
           </div>
-        </div>
-      )}
+          <div className="em-header-right">
+            <button
+              type="button"
+              onClick={anyCollapsed ? expandAll : collapseAll}
+              className="em-btn-link"
+            >
+              {anyCollapsed ? 'Rozbalit vše' : 'Sbalit vše'}
+            </button>
+            <label className="em-toggle">
+              <input
+                type="checkbox"
+                checked={showCompleted}
+                onChange={(e) => setShowCompleted(e.target.checked)}
+              />
+              <span>Hotové</span>
+            </label>
+          </div>
+        </header>
 
-      {error && (
-        <div className="em-error" role="alert">
-          Chyba: {error}
-        </div>
-      )}
+        <p className="em-subtitle">
+          {formatCzechDate(date)}
+          {isPastOrFuture && <span className="em-warn"> (ne dnešek)</span>}
+          {loading && <span className="em-loading"> · načítám…</span>}
+          {!loading && (
+            <span className="em-stats">
+              {' '}· {tasks.length} tasků · skenováno {scannedFiles} souborů
+            </span>
+          )}
+        </p>
 
-      {!todayFileExists && !loading && (
-        <div className="em-info">
-          Pro {date} zatím neexistuje daily note.
-        </div>
-      )}
+        {dayChangedBanner && (
+          <div className="em-banner em-banner-warn">
+            <span>
+              Od posledního otevření (<strong>{dayChangedBanner}</strong>) je nový den.
+              Přepnout na dnešek (<strong>{today}</strong>)?
+            </span>
+            <div className="em-banner-actions">
+              <button
+                type="button"
+                onClick={() => acknowledgeDayChange(true)}
+                className="em-btn-primary"
+              >
+                Přepnout
+              </button>
+              <button
+                type="button"
+                onClick={() => acknowledgeDayChange(false)}
+                className="em-btn-secondary"
+              >
+                Zůstat
+              </button>
+            </div>
+          </div>
+        )}
 
-      <FilterBar
-        availableTags={availableTags}
-        selectedTags={selectedTags}
-        onToggle={toggleTag}
-        onClear={clearTags}
-        totalCount={totalUnfiltered}
-        filteredCount={sortedVisibleTasks.length}
-      />
+        {error && (
+          <div className="em-error" role="alert">
+            Chyba: {error}
+          </div>
+        )}
 
-      <Matrix
-        tasks={sortedVisibleTasks}
-        today={today}
-        collapsed={collapsed}
-        onToggleCollapsed={toggleQuadrantCollapsed}
-      />
-    </div>
+        {!todayFileExists && !loading && (
+          <div className="em-info">
+            Pro {date} zatím neexistuje daily note. Přidej první task přes <code>+</code>{' '}
+            v libovolném kvadrantu — soubor se vytvoří automaticky.
+          </div>
+        )}
+
+        <FilterBar
+          availableTags={availableTags}
+          selectedTags={selectedTags}
+          onToggle={toggleTag}
+          onClear={clearTags}
+          totalCount={totalUnfiltered}
+          filteredCount={sortedVisibleTasks.length}
+        />
+
+        <Matrix
+          tasks={sortedVisibleTasks}
+          today={today}
+          collapsed={collapsed}
+          graceMap={graceMap}
+          onToggleCollapsed={toggleQuadrantCollapsed}
+          onToggleTask={handleToggle}
+          onSetDueDate={handleSetDueDate}
+          onUpdateTask={handleUpdate}
+          onAddTask={handleAdd}
+        />
+      </div>
+      <DragOverlay dropAnimation={null}>
+        {activeTask ? <TaskCardOverlay task={activeTask} /> : null}
+      </DragOverlay>
+    </DndContext>
   );
 }
 

@@ -1,0 +1,295 @@
+/**
+ * Čisté string→string transformace task řádků v MD souborech.
+ * Žádné fs / Obsidian API — testovatelné bez prostředí.
+ * Volá je `ObsidianTaskRepo` přes `app.vault.process()`.
+ */
+
+import { parseTaskLine, PRIORITY_EMOJI } from './parser.ts';
+import type { Priority, Quadrant } from './types.ts';
+
+const TASK_LINE_RE = /^(\s*-\s+\[)([ xX])(\].*)$/;
+const DONE_DATE_RE = /\s*✅\s*\d{4}-\d{2}-\d{2}/g;
+const DUE_DATE_STRIP_RE = /\s*📅\s*\d{4}-\d{2}-\d{2}/;
+const LEADING_TAGS_FULL_RE = /^(\s*-\s+\[[ xX]\]\s+(?:#[\p{L}\p{N}_-]+\s+)*)/u;
+const LEADING_QUADRANT_TAG_RE =
+  /^(\s*-\s+\[[ xX]\]\s+)(#(?:DO|DECIDE|DELEGATE|DELETE))(\s+|$)/i;
+const LEADING_NO_TAG_RE = /^(\s*-\s+\[[ xX]\]\s+)(.*)$/;
+const DNES_HEADING_RE = /^#\s+Dnes\s*$/i;
+const FRONTMATTER_END_RE = /^---\s*$/;
+
+const QUADRANT_TAG_SET = new Set(['#DO', '#DECIDE', '#DELEGATE', '#DELETE']);
+
+// ============================================================
+// Toggle checkbox + manage ✅ done date
+// ============================================================
+
+export type ToggleResult = {
+  previousLine: string;
+  newLine: string;
+  checked: boolean;
+};
+
+export function toggleLine(line: string, todayISO: string): ToggleResult {
+  const m = TASK_LINE_RE.exec(line);
+  if (!m) throw new Error(`Not a task line: "${line}"`);
+
+  const wasChecked = m[2].toLowerCase() === 'x';
+  const willBeChecked = !wasChecked;
+  const newCheckboxChar = willBeChecked ? 'x' : ' ';
+
+  let rest = m[3].replace(DONE_DATE_RE, '').replace(/\s+$/, '');
+  let newLine = `${m[1]}${newCheckboxChar}${rest}`;
+  if (willBeChecked) newLine += ` ✅ ${todayISO}`;
+
+  return { previousLine: line, newLine, checked: willBeChecked };
+}
+
+// ============================================================
+// Build new task line
+// ============================================================
+
+export function buildTaskLine(
+  quadrant: Quadrant,
+  text: string,
+  todayISO: string,
+  dueDate?: string | null,
+  priority?: Priority | null,
+): string {
+  const trimmed = text.trim();
+
+  const leadingMatch = trimmed.match(/^((?:#[\p{L}\p{N}_-]+\s+)+)(.*)$/u);
+  let leadingTags: string[] = [];
+  let remaining = trimmed;
+  if (leadingMatch) {
+    leadingTags = leadingMatch[1].trim().split(/\s+/);
+    remaining = leadingMatch[2].trim();
+  }
+
+  const contextTags = leadingTags.filter((t) => !QUADRANT_TAG_SET.has(t.toUpperCase()));
+
+  const prefix = quadrant === 'OPEN' ? '' : `#${quadrant} `;
+  const tagsPart = contextTags.length > 0 ? contextTags.join(' ') + ' ' : '';
+  const priorityPart = priority ? `${PRIORITY_EMOJI[priority]} ` : '';
+  const duePart = dueDate ? `📅 ${dueDate} ` : '';
+  return `- [ ] ${prefix}${tagsPart}${priorityPart}${duePart}🛫 ${todayISO} ${remaining}`.trimEnd();
+}
+
+// ============================================================
+// Move task between quadrants (změna úvodního tagu)
+// ============================================================
+
+export type MoveResult = {
+  previousLine: string;
+  newLine: string;
+  newQuadrant: Quadrant;
+};
+
+export function moveLineQuadrant(line: string, newQuadrant: Quadrant): MoveResult {
+  let newLine: string;
+
+  const taggedMatch = LEADING_QUADRANT_TAG_RE.exec(line);
+  if (taggedMatch) {
+    const prefix = taggedMatch[1];
+    const rest = line.slice(prefix.length + taggedMatch[2].length + taggedMatch[3].length);
+    newLine =
+      newQuadrant === 'OPEN'
+        ? `${prefix}${rest}`
+        : `${prefix}#${newQuadrant} ${rest}`;
+  } else {
+    const noTagMatch = LEADING_NO_TAG_RE.exec(line);
+    if (!noTagMatch) throw new Error(`Not a task line: "${line}"`);
+    if (newQuadrant === 'OPEN') {
+      return { previousLine: line, newLine: line, newQuadrant };
+    }
+    newLine = `${noTagMatch[1]}#${newQuadrant} ${noTagMatch[2]}`;
+  }
+
+  return { previousLine: line, newLine, newQuadrant };
+}
+
+// ============================================================
+// Set / remove due date
+// ============================================================
+
+export type SetDueDateResult = {
+  previousLine: string;
+  newLine: string;
+  newDueDate: string | null;
+};
+
+export function setDueDateOnLine(
+  line: string,
+  newDueDate: string | null,
+): SetDueDateResult {
+  if (newDueDate !== null && !/^\d{4}-\d{2}-\d{2}$/.test(newDueDate)) {
+    throw new Error(`Invalid dueDate format: "${newDueDate}"`);
+  }
+
+  let cleaned = line.replace(DUE_DATE_STRIP_RE, '');
+
+  let newLine = cleaned;
+  if (newDueDate) {
+    const m = LEADING_TAGS_FULL_RE.exec(cleaned);
+    if (!m) throw new Error(`Not a task line: "${line}"`);
+    const before = cleaned.slice(0, m[0].length);
+    const after = cleaned.slice(m[0].length);
+    newLine = `${before}📅 ${newDueDate} ${after}`;
+  }
+
+  newLine = newLine.replace(/  +/g, ' ').replace(/\s+$/, '');
+
+  return { previousLine: line, newLine, newDueDate };
+}
+
+// ============================================================
+// Update text + tags + (volitelně) dueDate + priority
+// Tri-state: undefined = preserve, null = clear, value = set
+// ============================================================
+
+export type UpdateOptions = {
+  dueDate?: string | null;
+  priority?: Priority | null;
+};
+
+export type UpdateResult = {
+  previousLine: string;
+  newLine: string;
+};
+
+export function updateLineTextAndTags(
+  line: string,
+  newText: string,
+  newContextTags: string[],
+  options: UpdateOptions = {},
+): UpdateResult {
+  const parsed = parseTaskLine(line, 0);
+  if (!parsed) throw new Error(`Not a task line: "${line}"`);
+
+  const indentMatch = /^(\s*)-\s+\[/.exec(line);
+  const indent = indentMatch?.[1] ?? '';
+
+  // Normalize tags: trim, drop empty, prepend #, dedupe case-insensitive
+  const seen = new Set<string>();
+  const normalizedTags: string[] = [];
+  for (const raw of newContextTags) {
+    const trimmed = raw.trim();
+    if (!trimmed) continue;
+    const withHash = trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+    const key = withHash.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    normalizedTags.push(withHash);
+  }
+
+  // Tri-state resolution
+  const effectiveDueDate =
+    options.dueDate === undefined ? parsed.dueDate ?? null : options.dueDate;
+  const effectivePriority =
+    options.priority === undefined ? parsed.priority ?? null : options.priority;
+
+  if (effectiveDueDate !== null && !/^\d{4}-\d{2}-\d{2}$/.test(effectiveDueDate)) {
+    throw new Error(`Invalid dueDate format: "${effectiveDueDate}"`);
+  }
+
+  const checkbox = parsed.checked ? 'x' : ' ';
+  const quadrantPart = parsed.quadrant === 'OPEN' ? '' : `#${parsed.quadrant} `;
+  const tagsPart = normalizedTags.length > 0 ? normalizedTags.join(' ') + ' ' : '';
+  const priorityPart = effectivePriority ? `${PRIORITY_EMOJI[effectivePriority]} ` : '';
+  const duePart = effectiveDueDate ? `📅 ${effectiveDueDate} ` : '';
+  const startPart = parsed.startDate ? `🛫 ${parsed.startDate} ` : '';
+  const text = newText.trim();
+  const donePart = parsed.doneDate ? ` ✅ ${parsed.doneDate}` : '';
+
+  const body = `${quadrantPart}${tagsPart}${priorityPart}${duePart}${startPart}${text}${donePart}`
+    .replace(/  +/g, ' ')
+    .replace(/\s+$/, '');
+  const newLine = `${indent}- [${checkbox}] ${body}`;
+
+  return { previousLine: line, newLine };
+}
+
+// ============================================================
+// Append nový task pod `# Dnes` sekci (full-content op)
+// ============================================================
+
+export type AppendResult = {
+  newContent: string;
+  lineIndex: number;
+  newLine: string;
+};
+
+/**
+ * Příjme celý obsah daily souboru, vrátí nový obsah s vloženým taskem.
+ * Pokud `# Dnes` heading chybí, vloží ho hned za frontmatter.
+ */
+export function appendTaskUnderDnes(
+  content: string,
+  text: string,
+  quadrant: Quadrant,
+  todayISO: string,
+  dueDate?: string | null,
+  priority?: Priority | null,
+): AppendResult {
+  const eol = content.includes('\r\n') ? '\r\n' : '\n';
+  const lines = content.split(/\r?\n/);
+
+  let dnesIdx = lines.findIndex((l) => DNES_HEADING_RE.test(l));
+  if (dnesIdx === -1) {
+    const fmEnd = findFrontmatterEnd(lines);
+    const insertAt = fmEnd + 1;
+    lines.splice(insertAt, 0, '', '# Dnes', '');
+    dnesIdx = insertAt + 1;
+  }
+
+  // Najdi pozici za posledním taskem v sekci, nebo hned za heading.
+  let insertAt = dnesIdx + 1;
+  for (let i = dnesIdx + 1; i < lines.length; i++) {
+    const l = lines[i];
+    if (/^#+\s/.test(l)) break;
+    if (/^---\s*$/.test(l)) break;
+    if (/^\s*-\s+\[[ xX]\]/.test(l)) {
+      insertAt = i + 1;
+    }
+  }
+
+  const newLine = buildTaskLine(quadrant, text, todayISO, dueDate, priority);
+  lines.splice(insertAt, 0, newLine);
+
+  return {
+    newContent: lines.join(eol),
+    lineIndex: insertAt,
+    newLine,
+  };
+}
+
+function findFrontmatterEnd(lines: string[]): number {
+  if (!FRONTMATTER_END_RE.test(lines[0] ?? '')) return -1;
+  for (let i = 1; i < lines.length; i++) {
+    if (FRONTMATTER_END_RE.test(lines[i])) return i;
+  }
+  return -1;
+}
+
+// ============================================================
+// Aplikuj transformaci na konkrétní řádek v celém obsahu souboru
+// ============================================================
+
+/**
+ * Helper: na řádku `lineIndex` v `content` zavolá `fn` s tím řádkem
+ * a nahradí jeho výstupem. Zachovává EOL stylu (CRLF / LF) původního souboru.
+ */
+export function transformLineInContent(
+  content: string,
+  lineIndex: number,
+  fn: (line: string) => string,
+): string {
+  const eol = content.includes('\r\n') ? '\r\n' : '\n';
+  const lines = content.split(/\r?\n/);
+
+  if (lineIndex < 0 || lineIndex >= lines.length) {
+    throw new Error(`lineIndex ${lineIndex} out of range (0..${lines.length - 1})`);
+  }
+
+  lines[lineIndex] = fn(lines[lineIndex]);
+  return lines.join(eol);
+}

@@ -366,14 +366,27 @@
 .em-quadrant-header {
   display: flex;
   align-items: baseline;
+  justify-content: space-between;
   gap: var(--size-2-2);
   padding: var(--size-2-3) var(--size-4-2);
-  cursor: pointer;
   user-select: none;
 }
 
-.em-quadrant-header:hover {
-  background-color: var(--background-modifier-hover);
+.em-quadrant-collapse {
+  display: flex;
+  align-items: baseline;
+  gap: var(--size-2-2);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  flex: 1;
+  color: inherit;
+}
+
+.em-quadrant-collapse:hover {
+  opacity: 0.85;
 }
 
 .em-collapse-icon {
@@ -399,10 +412,37 @@
   color: var(--text-muted);
 }
 
+.em-quadrant-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2-2);
+}
+
+.em-quadrant-add {
+  background: none;
+  border: none;
+  font-size: var(--font-ui-medium);
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 6px;
+  border-radius: var(--radius-s);
+  line-height: 1;
+}
+
+.em-quadrant-add:hover {
+  color: var(--text-normal);
+  background-color: var(--background-modifier-hover);
+}
+
 .em-quadrant-count {
   font-size: var(--font-ui-small);
   color: var(--text-muted);
   font-family: var(--font-monospace);
+}
+
+.em-quadrant-over {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: -1px;
 }
 
 .em-quadrant-body {
@@ -442,6 +482,60 @@
   border: 1px solid var(--background-modifier-border);
   border-radius: var(--radius-s);
   padding: var(--size-2-1) var(--size-2-2);
+  position: relative;
+  cursor: grab;
+}
+
+.em-task:active {
+  cursor: grabbing;
+}
+
+.em-task-editing {
+  cursor: text;
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--interactive-accent) 50%, transparent);
+}
+
+.em-task-checked {
+  opacity: 0.7;
+}
+
+.em-task-checked .em-task-text {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.em-task-dragging {
+  opacity: 0.3;
+}
+
+.em-task-grace {
+  border-color: var(--color-green);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-green) 35%, transparent);
+}
+
+.em-task-grace-hint {
+  margin: var(--size-2-1) 0 0;
+  font-size: var(--font-ui-smaller);
+  color: var(--color-green);
+  user-select: none;
+}
+
+.em-grace-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background-color: var(--color-green);
+  transition: width 250ms linear;
+}
+
+.em-task-overlay {
+  width: 260px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  transform: rotate(1deg);
+  border-color: var(--interactive-accent);
+  cursor: grabbing;
 }
 
 .em-task-overdue {
@@ -458,6 +552,7 @@
 .em-task-checkbox {
   margin-top: 2px;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .em-task-body {
@@ -531,4 +626,264 @@
   color: var(--color-red);
   border-color: var(--color-red);
   font-weight: var(--font-bold);
+}
+
+/* === Badges interactive variants === */
+.em-badge-clickable {
+  cursor: pointer;
+}
+
+.em-badge-clickable:hover {
+  outline: 1px solid var(--background-modifier-border-hover, var(--interactive-accent));
+}
+
+.em-badge-add {
+  border-style: dashed;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+
+.em-badge-add:hover {
+  color: var(--text-normal);
+  border-style: solid;
+}
+
+.em-badge-clear {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: var(--font-ui-smaller);
+  padding: 0 2px;
+}
+
+.em-badge-clear:hover {
+  color: var(--color-red);
+}
+
+.em-inline-flex {
+  display: inline-flex;
+}
+
+/* === Popovers (DueDate + Priority) === */
+.em-popover {
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  padding: var(--size-2-2);
+  display: flex;
+  align-items: center;
+  gap: var(--size-2-2);
+}
+
+.em-popover-menu {
+  flex-direction: column;
+  align-items: stretch;
+  padding: var(--size-2-1);
+  min-width: 140px;
+}
+
+.em-popover-input {
+  font-size: var(--font-ui-small);
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  padding: 2px var(--size-2-2);
+}
+
+.em-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2-2);
+  background: none;
+  border: none;
+  text-align: left;
+  padding: var(--size-2-1) var(--size-2-2);
+  font-size: var(--font-ui-small);
+  cursor: pointer;
+  border-radius: var(--radius-s);
+}
+
+.em-menu-item:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+.em-menu-item-active {
+  background-color: var(--background-modifier-hover);
+  font-weight: var(--font-semibold);
+}
+
+.em-menu-item-danger {
+  color: var(--color-red);
+  border-top: 1px solid var(--background-modifier-border);
+  margin-top: var(--size-2-1);
+  padding-top: var(--size-2-2);
+  justify-content: center;
+}
+
+.em-btn-ok {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border: none;
+  padding: 4px var(--size-4-2);
+  border-radius: var(--radius-s);
+  cursor: pointer;
+  font-size: var(--font-ui-smaller);
+}
+
+.em-btn-ok:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.em-btn-danger-link {
+  background: none;
+  border: none;
+  color: var(--color-red);
+  cursor: pointer;
+  font-size: var(--font-ui-smaller);
+  text-decoration: underline;
+  padding: 0 var(--size-2-1);
+}
+
+/* === Add task form === */
+.em-add-form {
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-primary);
+  border-radius: var(--radius-s);
+  padding: var(--size-2-2);
+  margin-bottom: var(--size-2-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-1);
+}
+
+.em-add-input {
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  padding: 4px var(--size-2-2);
+  outline: none;
+  font-size: var(--font-ui-small);
+  width: 100%;
+}
+
+.em-add-input-text {
+  background: transparent;
+  border: none;
+  padding: 2px 0;
+  font-size: var(--font-ui-medium);
+}
+
+.em-add-input-text:focus {
+  outline: none;
+}
+
+.em-add-input-tags {
+  font-family: var(--font-monospace);
+  font-size: var(--font-ui-smaller);
+  background-color: var(--background-secondary);
+}
+
+.em-add-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--size-2-2);
+  padding-top: var(--size-2-1);
+}
+
+.em-add-hint {
+  margin-left: auto;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-faint);
+  user-select: none;
+}
+
+/* === Edit form === */
+.em-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-1);
+}
+
+.em-edit-text {
+  width: 100%;
+  font-size: var(--font-ui-small);
+  line-height: 1.4;
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  padding: var(--size-2-1) var(--size-2-2);
+  resize: vertical;
+  font-family: inherit;
+}
+
+.em-edit-tags {
+  width: 100%;
+  font-size: var(--font-ui-smaller);
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  padding: 4px var(--size-2-2);
+  font-family: var(--font-monospace);
+}
+
+.em-edit-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--size-2-2);
+}
+
+.em-edit-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2-2);
+  margin-top: var(--size-2-1);
+}
+
+.em-edit-hint {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-faint);
+  user-select: none;
+}
+
+.em-edit-buttons {
+  margin-left: auto;
+  display: flex;
+  gap: var(--size-2-1);
+}
+
+.em-btn-primary-accent {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border: none;
+  padding: 4px var(--size-4-2);
+  border-radius: var(--radius-s);
+  cursor: pointer;
+  font-size: var(--font-ui-smaller);
+}
+
+.em-btn-primary-accent:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.em-edit-error {
+  margin: 0;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-error);
+}
+
+/* === Notices (Obsidian Notice) — naše vlastní červená varianta === */
+.em-notice-error {
+  background-color: color-mix(in srgb, var(--color-red) 18%, var(--background-primary));
+  border-left: 4px solid var(--color-red);
+  color: var(--text-normal);
 }

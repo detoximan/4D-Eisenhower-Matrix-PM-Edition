@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { Task, Quadrant as QuadrantKind } from '../core/types.ts';
+import type { Priority, Task, Quadrant as QuadrantKind } from '../core/types.ts';
 import { QUADRANTS } from '../core/types.ts';
 import { Quadrant } from './Quadrant.tsx';
 
@@ -7,10 +7,25 @@ type Props = {
   tasks: Task[];
   today: string;
   collapsed: Record<QuadrantKind, boolean>;
+  graceMap: Map<string, number>;
   onToggleCollapsed: (q: QuadrantKind) => void;
+  onToggleTask: (task: Task) => void;
+  onSetDueDate: (task: Task, newDueDate: string | null) => Promise<void>;
+  onUpdateTask: (
+    task: Task,
+    text: string,
+    contextTags: string[],
+    options: { dueDate: string | null; priority: Priority | null },
+  ) => Promise<void>;
+  onAddTask: (input: {
+    text: string;
+    quadrant: QuadrantKind;
+    dueDate: string | null;
+    priority: Priority | null;
+  }) => Promise<void>;
 };
 
-export function Matrix({ tasks, today, collapsed, onToggleCollapsed }: Props) {
+export function Matrix(props: Props) {
   const tasksByQuadrant = useMemo(() => {
     const map: Record<QuadrantKind, Task[]> = {
       DO: [],
@@ -19,35 +34,34 @@ export function Matrix({ tasks, today, collapsed, onToggleCollapsed }: Props) {
       DELETE: [],
       OPEN: [],
     };
-    for (const t of tasks) {
+    for (const t of props.tasks) {
       map[t.quadrant].push(t);
     }
     return map;
-  }, [tasks]);
+  }, [props.tasks]);
+
+  const renderQuadrant = (q: QuadrantKind) => (
+    <Quadrant
+      key={q}
+      kind={q}
+      tasks={tasksByQuadrant[q]}
+      today={props.today}
+      collapsed={props.collapsed[q]}
+      graceMap={props.graceMap}
+      onToggleCollapsed={() => props.onToggleCollapsed(q)}
+      onToggleTask={props.onToggleTask}
+      onSetDueDate={props.onSetDueDate}
+      onUpdateTask={props.onUpdateTask}
+      onAddTask={props.onAddTask}
+    />
+  );
 
   return (
     <div className="em-matrix">
       <div className="em-matrix-grid">
-        {QUADRANTS.filter((q) => q !== 'OPEN').map((q) => (
-          <Quadrant
-            key={q}
-            kind={q}
-            tasks={tasksByQuadrant[q]}
-            today={today}
-            collapsed={collapsed[q]}
-            onToggleCollapsed={() => onToggleCollapsed(q)}
-          />
-        ))}
+        {QUADRANTS.filter((q) => q !== 'OPEN').map(renderQuadrant)}
       </div>
-      <div className="em-matrix-open">
-        <Quadrant
-          kind="OPEN"
-          tasks={tasksByQuadrant.OPEN}
-          today={today}
-          collapsed={collapsed.OPEN}
-          onToggleCollapsed={() => onToggleCollapsed('OPEN')}
-        />
-      </div>
+      <div className="em-matrix-open">{renderQuadrant('OPEN')}</div>
     </div>
   );
 }
