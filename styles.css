@@ -432,26 +432,20 @@
 }
 
 .em-quadrant-collapse {
-  display: flex;
-  align-items: baseline;
-  gap: var(--size-2-2);
   background: none;
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
-  padding: 0;
-  text-align: left;
-  flex: 1;
-  color: inherit;
+  padding: 2px 6px;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  border-radius: var(--radius-s);
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .em-quadrant-collapse:hover {
-  opacity: 0.85;
-}
-
-.em-collapse-icon {
-  font-size: var(--font-ui-smaller);
-  color: var(--text-muted);
-  width: 12px;
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
 }
 
 .em-quadrant-title {

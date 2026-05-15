@@ -69,13 +69,15 @@ export function Quadrant({
           onClick={onToggleCollapsed}
           className="em-quadrant-collapse"
           aria-expanded={!collapsed}
+          aria-label={collapsed ? `Rozbalit ${meta.label}` : `Sbalit ${meta.label}`}
+          title={collapsed ? 'Rozbalit kvadrant' : 'Sbalit kvadrant'}
         >
-          <span className="em-collapse-icon">{collapsed ? '▶' : '▼'}</span>
-          <div className="em-quadrant-title">
-            <h3>{meta.label}</h3>
-            <p>{meta.subtitle}</p>
-          </div>
+          {collapsed ? '▶' : '▼'}
         </button>
+        <div className="em-quadrant-title">
+          <h3>{meta.label}</h3>
+          <p>{meta.subtitle}</p>
+        </div>
         <div className="em-quadrant-actions">
           <button
             type="button"
