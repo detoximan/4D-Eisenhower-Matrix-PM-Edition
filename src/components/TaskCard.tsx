@@ -178,12 +178,14 @@ export function TaskCard({
                   {PRIORITY_META[task.priority].emoji} {PRIORITY_META[task.priority].label}
                 </span>
               )}
-              <DueDatePicker
-                currentDueDate={task.dueDate}
-                onChange={onSetDueDate}
-                variant={task.dueDate ? 'badge' : 'add'}
-                overdue={overdue}
-              />
+              {task.dueDate && (
+                <DueDatePicker
+                  currentDueDate={task.dueDate}
+                  onChange={onSetDueDate}
+                  variant="badge"
+                  overdue={overdue}
+                />
+              )}
               {task.startDate && <span className="em-badge">🛫 {task.startDate}</span>}
               {task.doneDate && <span className="em-badge">✅ {task.doneDate}</span>}
             </div>

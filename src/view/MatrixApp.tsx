@@ -5,8 +5,11 @@ import {
   DragOverlay,
   PointerSensor,
   TouchSensor,
+  pointerWithin,
+  rectIntersection,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
   type DragStartEvent,
   type Modifier,
@@ -80,6 +83,17 @@ const snapCenterToCursor: Modifier = ({
     x: transform.x + offsetX - draggingNodeRect.width / 2,
     y: transform.y + offsetY - draggingNodeRect.height / 2,
   };
+};
+
+/**
+ * Collision detection — pointerWithin (kurzor jako autorita) má přednost.
+ * Pokud kurzor není přímo nad žádným droppable (např. kvůli scroll, malé
+ * obrazovce), fallback na rectIntersection (bbox overlay vs droppable).
+ */
+const cursorFirstCollisionDetection: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args);
+  if (pointerCollisions.length > 0) return pointerCollisions;
+  return rectIntersection(args);
 };
 
 export function MatrixApp({ app, repo, plugin }: Props) {
@@ -439,7 +453,12 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   const isPastOrFuture = date !== today;
 
   return (
-    <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={cursorFirstCollisionDetection}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+    >
       <div className="em-app">
         {headerCollapsed ? (
           <div className="em-app-header em-app-header-compact">

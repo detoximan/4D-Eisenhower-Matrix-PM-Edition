@@ -647,31 +647,50 @@
   margin-top: var(--size-2-1);
 }
 
-.em-tag {
+/*
+ * Všechny "chip-like" prvky (tagy, priorita, datum badge) sdílí stejné
+ * základní rozměry — především stejnou výšku. inline-flex + line-height
+ * normalizuje rozdíl mezi <span> a <button> defaulty (jinak buttons mají
+ * v Chromiu intrinsic padding/line-height).
+ */
+.em-tag,
+.em-priority,
+.em-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
   font-size: var(--font-ui-smaller);
+  line-height: 1;
   padding: 0 var(--size-2-1);
-  background-color: var(--background-modifier-hover);
-  color: var(--text-muted);
   border-radius: var(--radius-s);
   font-family: var(--font-monospace);
+  box-sizing: border-box;
+}
+
+.em-tag {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-muted);
+  border: 1px solid transparent;
 }
 
 .em-priority {
-  font-size: var(--font-ui-smaller);
-  padding: 0 var(--size-2-1);
   background-color: var(--background-primary-alt);
   border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-s);
 }
 
 .em-badge {
-  font-size: var(--font-ui-smaller);
-  padding: 0 var(--size-2-1);
   background-color: var(--background-primary-alt);
   border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-s);
   color: var(--text-muted);
+}
+
+/* Buttony s class .em-badge — reset default button stylů */
+button.em-badge,
+button.em-tag,
+button.em-priority {
   font-family: var(--font-monospace);
+  margin: 0;
+  cursor: pointer;
 }
 
 /*

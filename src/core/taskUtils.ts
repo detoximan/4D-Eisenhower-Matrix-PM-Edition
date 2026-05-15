@@ -64,7 +64,8 @@ export function extractAllContextTags(tasks: Task[]): { tag: string; count: numb
   }
   const entries = [...counts.entries()]
     .map(([tag, count]) => ({ tag, count }))
-    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+    .sort((a, b) => a.tag.localeCompare(b.tag, 'cs', { sensitivity: 'base' }));
+  // UNTAGGED_FILTER ("Ostatní") vždy na konci, nezávisle na abecedě.
   if (untagged > 0) {
     entries.push({ tag: UNTAGGED_FILTER, count: untagged });
   }
