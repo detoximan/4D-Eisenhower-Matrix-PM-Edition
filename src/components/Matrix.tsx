@@ -26,6 +26,7 @@ type Props = {
     priority: Priority | null;
   }) => Promise<void>;
   onOpenSource: (task: Task, mode?: PaneType | boolean) => void;
+  createTagSuggest: (inputEl: HTMLInputElement) => void;
 };
 
 export function Matrix(props: Props) {
@@ -58,6 +59,7 @@ export function Matrix(props: Props) {
       onUpdateTask={props.onUpdateTask}
       onAddTask={props.onAddTask}
       onOpenSource={props.onOpenSource}
+      createTagSuggest={props.createTagSuggest}
     />
   );
 

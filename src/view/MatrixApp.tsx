@@ -23,11 +23,13 @@ import {
   formatDateISO,
   makeCompareTask,
   matchesFilter,
+  UNTAGGED_FILTER,
 } from '../core/taskUtils.ts';
 import { Matrix } from '../components/Matrix.tsx';
 import { FilterBar } from '../components/FilterBar.tsx';
 import { DateNav } from '../components/DateNav.tsx';
 import { TaskCardOverlay, GRACE_MS } from '../components/TaskCard.tsx';
+import { TagSuggest } from '../components/TagSuggest.ts';
 import type EisenhowerMatrixPlugin from '../../main.ts';
 
 type Props = {
@@ -348,6 +350,20 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     [tasks, showCompleted],
   );
 
+  // Live ref na seznam tagů pro autocomplete v add/edit formech.
+  // Ref místo state aby se TagSuggest nemusel re-instantovat když se tagy mění.
+  const availableTagNamesRef = useRef<string[]>([]);
+  availableTagNamesRef.current = availableTags
+    .filter((t) => t.tag !== UNTAGGED_FILTER)
+    .map((t) => t.tag);
+
+  const createTagSuggest = useCallback(
+    (inputEl: HTMLInputElement) => {
+      new TagSuggest(app, inputEl, () => availableTagNamesRef.current);
+    },
+    [app],
+  );
+
   const totalUnfiltered = useMemo(
     () => tasks.filter((t) => showCompleted || !t.checked).length,
     [tasks, showCompleted],
@@ -590,6 +606,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
           onUpdateTask={handleUpdate}
           onAddTask={handleAdd}
           onOpenSource={handleOpenSource}
+          createTagSuggest={createTagSuggest}
         />
         </div>
       </div>

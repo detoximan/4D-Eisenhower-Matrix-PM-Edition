@@ -22,6 +22,7 @@ type Props = {
     options: { dueDate: string | null; priority: Priority | null },
   ) => Promise<void>;
   onOpenSource: (mode?: PaneType | boolean) => void;
+  createTagSuggest: (inputEl: HTMLInputElement) => void;
 };
 
 export function TaskCard({
@@ -33,6 +34,7 @@ export function TaskCard({
   onSetDueDate,
   onUpdateTask,
   onOpenSource,
+  createTagSuggest,
 }: Props) {
   const overdue = isOverdue(task, today);
   const [editing, setEditing] = useState(false);
@@ -147,6 +149,7 @@ export function TaskCard({
           onCancel={() => setEditing(false)}
           onSaved={() => setEditing(false)}
           onUpdate={onUpdateTask}
+          createTagSuggest={createTagSuggest}
         />
       ) : (
         <div className="em-task-row">
@@ -218,9 +221,10 @@ type EditFormProps = {
   onCancel: () => void;
   onSaved: () => void;
   onUpdate: Props['onUpdateTask'];
+  createTagSuggest: (inputEl: HTMLInputElement) => void;
 };
 
-function EditForm({ task, onCancel, onSaved, onUpdate }: EditFormProps) {
+function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditFormProps) {
   const [text, setText] = useState(task.text);
   const [tagsRaw, setTagsRaw] = useState(task.contextTags.join(' '));
   const [dueDate, setDueDate] = useState(task.dueDate ?? '');
@@ -228,6 +232,7 @@ function EditForm({ task, onCancel, onSaved, onUpdate }: EditFormProps) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const textRef = useRef<HTMLInputElement>(null);
+  const tagsRef = useRef<HTMLInputElement>(null);
   const dateRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -236,6 +241,8 @@ function EditForm({ task, onCancel, onSaved, onUpdate }: EditFormProps) {
       el.focus();
       el.select();
     }
+    if (tagsRef.current) createTagSuggest(tagsRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const save = async () => {
@@ -300,12 +307,13 @@ function EditForm({ task, onCancel, onSaved, onUpdate }: EditFormProps) {
         placeholder="Text tasku"
       />
       <input
+        ref={tagsRef}
         type="text"
         value={tagsRaw}
         onChange={(e) => setTagsRaw(e.target.value)}
         onKeyDown={handleKeyDown}
         disabled={pending}
-        placeholder="#tag1 #tag2 (mezerou oddělené, # se doplní)"
+        placeholder="#tag1 #tag2 (autocomplete · mezerou oddělené · # se doplní)"
         className="em-edit-tags"
       />
       <div className="em-edit-controls">

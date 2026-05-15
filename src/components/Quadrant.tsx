@@ -29,6 +29,7 @@ type Props = {
     priority: Priority | null;
   }) => Promise<void>;
   onOpenSource: (task: Task, mode?: PaneType | boolean) => void;
+  createTagSuggest: (inputEl: HTMLInputElement) => void;
 };
 
 export function Quadrant({
@@ -44,6 +45,7 @@ export function Quadrant({
   onUpdateTask,
   onAddTask,
   onOpenSource,
+  createTagSuggest,
 }: Props) {
   const meta = QUADRANT_META[kind];
   const [adding, setAdding] = useState(false);
@@ -102,6 +104,7 @@ export function Quadrant({
                 setAdding(false);
               }}
               onCancel={() => setAdding(false)}
+              createTagSuggest={createTagSuggest}
             />
           )}
           {tasks.length === 0 && !adding ? (
@@ -121,6 +124,7 @@ export function Quadrant({
                     onSetDueDate={(d) => onSetDueDate(t, d)}
                     onUpdateTask={(text, tags, opts) => onUpdateTask(t, text, tags, opts)}
                     onOpenSource={(mode) => onOpenSource(t, mode)}
+                    createTagSuggest={createTagSuggest}
                   />
                 );
               })}

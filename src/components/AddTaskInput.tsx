@@ -12,6 +12,7 @@ type Props = {
     priority: Priority | null;
   }) => Promise<void>;
   onCancel: () => void;
+  createTagSuggest: (inputEl: HTMLInputElement) => void;
 };
 
 function normalizeTagsInput(raw: string): string[] {
@@ -22,14 +23,21 @@ function normalizeTagsInput(raw: string): string[] {
     .map((t) => (t.startsWith('#') ? t : `#${t}`));
 }
 
-export function AddTaskInput({ quadrant, onSubmit, onCancel }: Props) {
+export function AddTaskInput({ quadrant, onSubmit, onCancel, createTagSuggest }: Props) {
   const [text, setText] = useState('');
   const [tagsRaw, setTagsRaw] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState<Priority | null>(null);
   const [pending, setPending] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const tagsRef = useRef<HTMLInputElement>(null);
   const dateRef = useRef<HTMLInputElement>(null);
+
+  // Attach tag autocomplete na tags input — jen na mount.
+  useEffect(() => {
+    if (tagsRef.current) createTagSuggest(tagsRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -97,11 +105,12 @@ export function AddTaskInput({ quadrant, onSubmit, onCancel }: Props) {
         className="em-add-input em-add-input-text"
       />
       <input
+        ref={tagsRef}
         type="text"
         value={tagsRaw}
         onChange={(e) => setTagsRaw(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="#tagy (mezerou oddělené, # se doplní)"
+        placeholder="#tagy (autocomplete · mezerou oddělené · # se doplní)"
         disabled={pending}
         className="em-add-input em-add-input-tags"
       />
