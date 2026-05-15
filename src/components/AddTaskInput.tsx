@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Platform } from 'obsidian';
 import type { Priority, Quadrant } from '../core/types.ts';
 import { PriorityPicker } from './PriorityPicker.tsx';
 
@@ -32,6 +33,16 @@ export function AddTaskInput({ quadrant, onSubmit, onCancel }: Props) {
 
   useEffect(() => {
     inputRef.current?.focus();
+    // Mobile: po focusování virtuální klávesnice překryje spodní polovinu obrazovky.
+    // Form je v kvadrantu DO/DECIDE/... a může být pod klávesnicí (= neviditelný).
+    // ScrollIntoView ho posune do středu zbylého viewportu.
+    // Delay 350 ms = klávesnice má čas vyjet, jinak browser scrolluje do špatné pozice.
+    if (Platform.isMobile) {
+      const timer = window.setTimeout(() => {
+        inputRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }, 350);
+      return () => window.clearTimeout(timer);
+    }
   }, []);
 
   const submit = async () => {

@@ -91,7 +91,14 @@ export function TaskCard({
 
   const showContextMenu = (e: React.MouseEvent) => {
     if (editing) return;
+    // Prevent browser's native menu in obou módech (long-press na mobilu by jinak
+    // otevíral system "Copy / Select" menu).
     e.preventDefault();
+    if (Platform.isMobile) {
+      // Na mobilu se contextmenu fire-uje jako side-effect long-pressu — ale long-press
+      // je vyhrazen pro DRAG. Menu je dostupný přes double-tap (handleDoubleClick).
+      return;
+    }
     e.stopPropagation();
     buildMenu().showAtMouseEvent(e.nativeEvent);
   };

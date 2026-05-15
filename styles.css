@@ -550,6 +550,11 @@
   padding: var(--size-2-1) var(--size-2-2);
   position: relative;
   cursor: grab;
+  /* Mobile: zabrání native long-press menu (text selection, "Copy" callout),
+     které by jinak konkurovalo s drag aktivací. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .em-task:active {
