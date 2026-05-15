@@ -212,8 +212,21 @@
   margin: -1px;
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
+  /* Chromium-specific: schovej calendar-picker-indicator u type=date,
+     jinak proniká přes clip */
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.em-sr-only::-webkit-calendar-picker-indicator,
+.em-sr-only::-webkit-inner-spin-button,
+.em-sr-only::-webkit-clear-button {
+  display: none !important;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 /* === FilterBar === */
@@ -725,16 +738,25 @@ button.em-priority {
 }
 
 .em-badge-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  width: 18px;
   background: none;
-  border: none;
+  border: 1px solid transparent;
   color: var(--text-faint);
   cursor: pointer;
   font-size: var(--font-ui-smaller);
-  padding: 0 2px;
+  line-height: 1;
+  padding: 0;
+  border-radius: var(--radius-s);
+  box-sizing: border-box;
 }
 
 .em-badge-clear:hover {
   color: var(--color-red);
+  background-color: var(--background-modifier-hover);
 }
 
 .em-inline-flex {
