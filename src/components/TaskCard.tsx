@@ -40,13 +40,26 @@ export function TaskCard({
   const [editing, setEditing] = useState(false);
 
   const draggableId = `${task.sourceFile}:${task.lineIndex}`;
-  // Pozn.: vizuál během dragu řeší výhradně DragOverlay v MatrixApp.
-  // Originální karta zůstává na své grid pozici (žádný transform, žádný opacity hack)
-  // — pak nemůže "uvíznout" v drag stavu po dropu.
-  const { attributes, listeners, setNodeRef } = useDraggable({
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: draggableId,
     disabled: editing,
   });
+
+  // Drag vizuál — dva režimy:
+  //   Desktop: DragOverlay v MatrixApp (position:fixed). Originál se neposouvá.
+  //   Mobile:  DragOverlay je nespolehlivý (position:fixed se na Obsidian mobile
+  //            pere s transform-ancestory swipe gest → overlay mimo obrazovku).
+  //            Proto na mobilu posouváme přímo originální kartu — sleduje prst.
+  const dragStyle: React.CSSProperties =
+    Platform.isMobile && transform
+      ? {
+          transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+          position: 'relative',
+          zIndex: 1000,
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)',
+          opacity: 0.97,
+        }
+      : {};
 
   const now = Date.now();
   const inGrace = task.checked && graceExpiresAt !== undefined && graceExpiresAt > now;
@@ -126,6 +139,7 @@ export function TaskCard({
   return (
     <li
       ref={setNodeRef}
+      style={dragStyle}
       {...(editing ? {} : attributes)}
       {...(editing ? {} : listeners)}
       onDoubleClick={handleDoubleClick}
@@ -133,7 +147,7 @@ export function TaskCard({
       className={`em-task ${overdue ? 'em-task-overdue' : ''} ${
         inGrace ? 'em-task-grace' : ''
       } ${editing ? 'em-task-editing' : ''} ${task.checked && !editing ? 'em-task-checked' : ''} ${
-        isActiveDrag ? 'em-task-active-drag' : ''
+        isActiveDrag && !Platform.isMobile ? 'em-task-active-drag' : ''
       }`}
       title={
         editing

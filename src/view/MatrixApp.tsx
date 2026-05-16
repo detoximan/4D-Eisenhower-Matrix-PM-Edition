@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Platform } from 'obsidian';
 import type { App, EventRef, PaneType } from 'obsidian';
 import {
   DndContext,
@@ -610,8 +611,10 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         />
         </div>
       </div>
+      {/* DragOverlay jen na desktopu — na mobilu se posouvá originální karta
+          (position:fixed overlay je na Obsidian mobile nespolehlivý). */}
       <DragOverlay dropAnimation={null} modifiers={[snapCenterToCursor]}>
-        {activeTask ? <TaskCardOverlay task={activeTask} /> : null}
+        {activeTask && !Platform.isMobile ? <TaskCardOverlay task={activeTask} /> : null}
       </DragOverlay>
     </DndContext>
   );
