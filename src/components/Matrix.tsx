@@ -26,6 +26,7 @@ type Props = {
     priority: Priority | null;
   }) => Promise<void>;
   onOpenSource: (task: Task, mode?: PaneType | boolean) => void;
+  onMoveQuadrant: (task: Task, target: QuadrantKind) => void;
   createTagSuggest: (inputEl: HTMLInputElement) => void;
 };
 
@@ -59,6 +60,7 @@ export function Matrix(props: Props) {
       onUpdateTask={props.onUpdateTask}
       onAddTask={props.onAddTask}
       onOpenSource={props.onOpenSource}
+      onMoveQuadrant={props.onMoveQuadrant}
       createTagSuggest={props.createTagSuggest}
     />
   );

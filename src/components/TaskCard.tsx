@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { Menu, Platform, type PaneType } from 'obsidian';
-import type { Priority, Task } from '../core/types.ts';
-import { PRIORITY_META } from '../core/types.ts';
+import type { Priority, Quadrant, Task } from '../core/types.ts';
+import { PRIORITY_META, QUADRANTS, QUADRANT_META } from '../core/types.ts';
 import { isOverdue } from '../core/taskUtils.ts';
 import { DueDatePicker } from './DueDatePicker.tsx';
 import { PriorityPicker } from './PriorityPicker.tsx';
@@ -22,6 +22,7 @@ type Props = {
     options: { dueDate: string | null; priority: Priority | null },
   ) => Promise<void>;
   onOpenSource: (mode?: PaneType | boolean) => void;
+  onMoveQuadrant: (target: Quadrant) => void;
   createTagSuggest: (inputEl: HTMLInputElement) => void;
 };
 
@@ -34,32 +35,20 @@ export function TaskCard({
   onSetDueDate,
   onUpdateTask,
   onOpenSource,
+  onMoveQuadrant,
   createTagSuggest,
 }: Props) {
   const overdue = isOverdue(task, today);
   const [editing, setEditing] = useState(false);
 
   const draggableId = `${task.sourceFile}:${task.lineIndex}`;
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+  // Drag jen na desktopu. Na mobilu je touch-drag v Obsidian webview
+  // nespolehlivý (long-press hijackne OS) — místo toho přesun přes
+  // context menu „Přesunout do…".
+  const { attributes, listeners, setNodeRef } = useDraggable({
     id: draggableId,
-    disabled: editing,
+    disabled: editing || Platform.isMobile,
   });
-
-  // Drag vizuál — dva režimy:
-  //   Desktop: DragOverlay v MatrixApp (position:fixed). Originál se neposouvá.
-  //   Mobile:  DragOverlay je nespolehlivý (position:fixed se na Obsidian mobile
-  //            pere s transform-ancestory swipe gest → overlay mimo obrazovku).
-  //            Proto na mobilu posouváme přímo originální kartu — sleduje prst.
-  const dragStyle: React.CSSProperties =
-    Platform.isMobile && transform
-      ? {
-          transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-          position: 'relative',
-          zIndex: 1000,
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)',
-          opacity: 0.97,
-        }
-      : {};
 
   const now = Date.now();
   const inGrace = task.checked && graceExpiresAt !== undefined && graceExpiresAt > now;
@@ -101,29 +90,33 @@ export function TaskCard({
         .setIcon('picture-in-picture-2')
         .onClick(() => onOpenSource('window')),
     );
+    // Přesun do jiného kvadrantu — hlavní cesta pro mobil (drag tam nefunguje
+    // spolehlivě). Vynechá aktuální kvadrant tasku.
+    menu.addSeparator();
+    for (const q of QUADRANTS) {
+      if (q === task.quadrant) continue;
+      menu.addItem((item) =>
+        item
+          .setTitle(`Přesunout → ${QUADRANT_META[q].label}`)
+          .setIcon('arrow-right')
+          .onClick(() => onMoveQuadrant(q)),
+      );
+    }
     return menu;
   };
 
+  /**
+   * Kontextové menu — desktop: pravý klik · mobil: long-press i double-tap.
+   */
   const showContextMenu = (e: React.MouseEvent) => {
     if (editing) return;
-    // Prevent browser's native menu in obou módech (long-press na mobilu by jinak
-    // otevíral system "Copy / Select" menu).
     e.preventDefault();
-    if (Platform.isMobile) {
-      // Na mobilu se contextmenu fire-uje jako side-effect long-pressu — ale long-press
-      // je vyhrazen pro DRAG. Menu je dostupný přes double-tap (handleDoubleClick).
-      return;
-    }
     e.stopPropagation();
     buildMenu().showAtMouseEvent(e.nativeEvent);
   };
 
   /**
-   * Double-tap chování:
-   *   - Desktop: rovnou edit (rychlá cesta)
-   *   - Mobile: kontextové menu (long-press kolidoval s drag, takže nešel right-click
-   *     jako na desktopu — místo toho dvojklepnutí otevře menu, ve kterém je „Editovat"
-   *     jako první položka)
+   * Double-tap: desktop → rovnou edit (rychlá cesta) · mobil → kontextové menu.
    */
   const handleDoubleClick = (e: React.MouseEvent) => {
     if (editing) return;
@@ -139,7 +132,6 @@ export function TaskCard({
   return (
     <li
       ref={setNodeRef}
-      style={dragStyle}
       {...(editing ? {} : attributes)}
       {...(editing ? {} : listeners)}
       onDoubleClick={handleDoubleClick}
@@ -153,7 +145,7 @@ export function TaskCard({
         editing
           ? undefined
           : Platform.isMobile
-            ? 'Dvojklik pro menu'
+            ? 'Podržet nebo dvojklep pro menu'
             : 'Dvojklik pro editaci · pravý klik pro menu'
       }
     >

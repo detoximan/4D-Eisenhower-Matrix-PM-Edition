@@ -425,6 +425,34 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     [tasks],
   );
 
+  // Přesun tasku do jiného kvadrantu — sdíleno mezi drag-end a context menu.
+  const handleMove = useCallback(
+    async (task: Task, targetQuadrant: Quadrant) => {
+      if (task.quadrant === targetQuadrant) return;
+      const id = taskKey(task.sourceFile, task.lineIndex);
+
+      // Optimistic update
+      setTasks((prev) =>
+        prev.map((t) =>
+          taskKey(t.sourceFile, t.lineIndex) === id
+            ? { ...t, quadrant: targetQuadrant }
+            : t,
+        ),
+      );
+
+      try {
+        await repo.moveTask(task.sourceFile, task.lineIndex, targetQuadrant);
+      } catch (err) {
+        // rollback
+        setTasks((prev) =>
+          prev.map((t) => (taskKey(t.sourceFile, t.lineIndex) === id ? task : t)),
+        );
+        showError(`Přesun selhal: ${String((err as Error).message ?? err)}`);
+      }
+    },
+    [repo],
+  );
+
   const onDragEnd = useCallback(
     async (e: DragEndEvent) => {
       setActiveTask(null);
@@ -440,31 +468,9 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       // overId je vždy Quadrant kind (karty nejsou drop targety — useDraggable only)
       if (!QUADRANTS.includes(overId as Quadrant)) return;
 
-      const targetQuadrant = overId as Quadrant;
-      if (dragged.quadrant === targetQuadrant) return;
-
-      // Optimistic update
-      setTasks((prev) =>
-        prev.map((t) =>
-          taskKey(t.sourceFile, t.lineIndex) === draggedId
-            ? { ...t, quadrant: targetQuadrant }
-            : t,
-        ),
-      );
-
-      try {
-        await repo.moveTask(dragged.sourceFile, dragged.lineIndex, targetQuadrant);
-      } catch (err) {
-        // rollback
-        setTasks((prev) =>
-          prev.map((t) =>
-            taskKey(t.sourceFile, t.lineIndex) === draggedId ? dragged : t,
-          ),
-        );
-        showError(`Přesun selhal: ${String((err as Error).message ?? err)}`);
-      }
+      await handleMove(dragged, overId as Quadrant);
     },
-    [tasks, repo],
+    [tasks, handleMove],
   );
 
   const isPastOrFuture = date !== today;
@@ -607,6 +613,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
           onUpdateTask={handleUpdate}
           onAddTask={handleAdd}
           onOpenSource={handleOpenSource}
+          onMoveQuadrant={handleMove}
           createTagSuggest={createTagSuggest}
         />
         </div>
