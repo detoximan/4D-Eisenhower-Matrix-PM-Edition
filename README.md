@@ -1,3 +1,5 @@
+**Čeština** · [English](README.en.md)
+
 # Eisenhower Matrix — Obsidian plugin
 
 Vizualizace tasků napříč celým vault-em v **5-polové Eisenhower matici** (DO / DECIDE / DELEGATE / DELETE / OPEN). Čte a zapisuje [Obsidian Tasks](https://publish.obsidian.md/tasks/Introduction) syntaxi — `#tagy`, `📅 due`, `🛫 start`, `✅ done`, priority emoji.
@@ -20,15 +22,15 @@ Vizualizace tasků napříč celým vault-em v **5-polové Eisenhower matici** (
 
 - **5-polová matice** — kvadrant určuje **první `#tag`** za checkboxem: `#DO`, `#DECIDE`, `#DELEGATE`, `#DELETE`. Cokoli jiného → OPEN.
 - **Cross-vault agregace** — sbírá tasky ze **všech `.md` souborů** ve vaultu (Dataview-like), ne jen z dnešní daily note.
-- **Plné CRUD** — přidání (formulář s text + tagy + due date + priorita), editace dvojklikem, odškrtnutí, drag mezi kvadranty.
+- **Plné CRUD** — přidání (formulář s text + tagy + due date + priorita), editace, odškrtnutí, přesun mezi kvadranty.
 - **Priorita** podle Obsidian Tasks konvence: 🔺 highest · ⏫ high · 🔼 medium · 🔽 low · ⏬ lowest
+- **Tag autocomplete** — při psaní tagů napovídá existující tagy z vault-u (žádné duplicity)
 - **Filtr** podle context tagu (OR logika + virtuální „Ostatní" chip)
 - **Datum navigace** (← / → / kalendář / Dnes) + den-cutoff banner po půlnoci
-- **Pravý klik na task** → otevři source soubor (current pane / nová záložka / split / nové okno) — kurzor přistane přímo na řádku tasku
 - **3 s grace period** po odškrtnutí (zelený rámeček + odpočet — klikni znovu pro vrácení)
 - **Sticky header** + sbalitelná hlavička pro mobilní zobrazení
 - **Sortování v kvadrantu**: overdue → priorita desc → due date asc → alfabeticky
-- **Mobile** (Android testováno)
+- **Desktop i mobil** (Android testováno)
 - **Respektuje core „Daily notes"** — folder + template (s `{{date}}`, `{{title}}`, `{{time}}` substitucí)
 
 ## Instalace
@@ -86,13 +88,13 @@ Priorita ([Obsidian Tasks konvence](https://publish.obsidian.md/tasks/Getting+St
 |------|-----|
 | Odškrtnout task | Klik na checkbox · 3 s grace period (klik znovu = vrátit) |
 | Přidat task | Klik `+` v headeru kvadrantu → text + #tagy + 📅 + ⏫ → Enter |
-| Editovat task | **Dvojklik** na kartu (text + tagy + 📅 + ⏫) |
+| Editovat task | **Desktop:** dvojklik na kartu. **Mobil:** long-press / dvojklep → menu → Editovat |
 | Změnit termín samostatně | Klik na 📅 badge na kartě |
-| Přesun mezi kvadranty | **Drag** karty na cílový kvadrant — mění úvodní tag |
-| Otevřít source soubor | **Pravý klik** na kartu → menu (current / nová záložka / split / okno) |
+| Přesun mezi kvadranty | **Desktop:** drag karty na cílový kvadrant. **Mobil:** long-press / dvojklep → menu → „Přesunout do…" |
+| Otevřít source soubor | **Desktop:** pravý klik na kartu. **Mobil:** long-press / dvojklep. → menu (current pane / nová záložka / split / okno) — kurzor přistane na řádku tasku |
 | Filtr podle tagu | Klik na chip ve filter baru (multi-select OR) |
 | Předchozí / další den | Šipky ← → v headeru, kalendář, nebo „Dnes" |
-| Sbalit kvadrant | Klik na header kvadrantu (▼ / ▶) |
+| Sbalit kvadrant | Klik na šipku ▼/▶ vedle názvu kvadrantu |
 | Sbalit celou hlavičku | ▲ vpravo nahoře (užitečné na mobilu) |
 | Zobrazit hotové tasky | Toggle „Hotové" v headeru |
 
@@ -125,12 +127,11 @@ Pokud daily note pro daný den neexistuje a přidáš první task, plugin ji **v
 
 ## Mobile
 
-Funguje na Androidu. Pár tipů:
-- **Long-press** na kartu = ekvivalent pravého kliknutí (otevři source soubor)
-- **Sbalená hlavička** (▲ tlačítko) — uvolní místo pro matici, jinak header zabírá moc viewportu
-- Drag mezi kvadranty: long-press 250 ms + táhni — funguje, nekoliduje se scrollováním
+Funguje na Androidu (`isDesktopOnly: false`; iOS nezkoušeno, ale mělo by fungovat).
 
-iOS nezkoušeno, ale `isDesktopOnly: false` v manifestu by mělo fungovat.
+- **Long-press nebo dvojklep** na kartu → context menu (Editovat · Otevřít soubor · **Přesunout do…**)
+- **Přesun mezi kvadranty** se na mobilu dělá přes menu („Přesunout → DECIDE" atd.). Touch-drag je v Obsidian mobile webview nespolehlivý, proto menu — dva klepy, deterministické.
+- **Sbalená hlavička** (▲ tlačítko) — uvolní vertikální místo pro matici
 
 ## Roadmap
 
