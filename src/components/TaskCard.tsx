@@ -63,30 +63,30 @@ export function TaskCard({
   const buildMenu = (): Menu => {
     const menu = new Menu();
     menu.addItem((item) =>
-      item.setTitle('Editovat').setIcon('pencil').onClick(enterEdit),
+      item.setTitle('Edit').setIcon('pencil').onClick(enterEdit),
     );
     menu.addSeparator();
     menu.addItem((item) =>
       item
-        .setTitle('Otevřít soubor')
+        .setTitle('Open file')
         .setIcon('file-text')
         .onClick(() => onOpenSource(false)),
     );
     menu.addItem((item) =>
       item
-        .setTitle('Otevřít v nové záložce')
+        .setTitle('Open in new tab')
         .setIcon('file-plus')
         .onClick(() => onOpenSource('tab')),
     );
     menu.addItem((item) =>
       item
-        .setTitle('Otevřít v novém panelu vpravo')
+        .setTitle('Open in new pane to the right')
         .setIcon('separator-vertical')
         .onClick(() => onOpenSource('split')),
     );
     menu.addItem((item) =>
       item
-        .setTitle('Otevřít v novém okně')
+        .setTitle('Open in new window')
         .setIcon('picture-in-picture-2')
         .onClick(() => onOpenSource('window')),
     );
@@ -97,7 +97,7 @@ export function TaskCard({
       if (q === task.quadrant) continue;
       menu.addItem((item) =>
         item
-          .setTitle(`Přesunout → ${QUADRANT_META[q].label}`)
+          .setTitle(`Move to ${QUADRANT_META[q].label}`)
           .setIcon('arrow-right')
           .onClick(() => onMoveQuadrant(q)),
       );
@@ -145,8 +145,8 @@ export function TaskCard({
         editing
           ? undefined
           : Platform.isMobile
-            ? 'Podržet nebo dvojklep pro menu'
-            : 'Dvojklik pro editaci · pravý klik pro menu'
+            ? 'Long-press or double-tap for menu'
+            : 'Double-click to edit · right-click for menu'
       }
     >
       {editing ? (
@@ -167,12 +167,12 @@ export function TaskCard({
             onDoubleClick={(e) => e.stopPropagation()}
             className="em-task-checkbox"
             aria-label={
-              task.checked ? 'Označit jako neudělaný (zpět)' : 'Označit jako hotový'
+              task.checked ? 'Mark as not done (undo)' : 'Mark as done'
             }
           />
           <div className="em-task-body">
             <p className="em-task-text">
-              {task.text || <em className="em-empty-text">(prázdný text)</em>}
+              {task.text || <em className="em-empty-text">(empty text)</em>}
             </p>
             {!task.isFromDnes && (
               <p className="em-task-source" title={task.sourceFile}>
@@ -189,7 +189,7 @@ export function TaskCard({
                 <span
                   className="em-badge"
                   style={{ color: PRIORITY_META[task.priority].tone }}
-                  title={`Priorita: ${PRIORITY_META[task.priority].label}`}
+                  title={`Priority: ${PRIORITY_META[task.priority].label}`}
                 >
                   {PRIORITY_META[task.priority].emoji} {PRIORITY_META[task.priority].label}
                 </span>
@@ -205,7 +205,7 @@ export function TaskCard({
             </div>
             {inGrace && (
               <p className="em-task-grace-hint">
-                ↩ klikni znovu pro zpět · {Math.ceil(graceRemaining / 1000)} s
+                ↩ click again to undo · {Math.ceil(graceRemaining / 1000)} s
               </p>
             )}
           </div>
@@ -255,7 +255,7 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
     if (pending) return;
     const trimmed = text.trim();
     if (!trimmed) {
-      setError('Text nesmí být prázdný');
+      setError('Text cannot be empty');
       return;
     }
     const tagsArray = tagsRaw
@@ -310,7 +310,7 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
         onKeyDown={handleKeyDown}
         disabled={pending}
         className="em-edit-text"
-        placeholder="Text tasku"
+        placeholder="Task text"
       />
       <input
         ref={tagsRef}
@@ -319,7 +319,7 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
         onChange={(e) => setTagsRaw(e.target.value)}
         onKeyDown={handleKeyDown}
         disabled={pending}
-        placeholder="#tag1 #tag2 (autocomplete · mezerou oddělené · # se doplní)"
+        placeholder="#tag1 #tag2 (autocomplete · space-separated · # added automatically)"
         className="em-edit-tags"
       />
       <div className="em-edit-controls">
@@ -328,9 +328,9 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
           onClick={openDatePicker}
           disabled={pending}
           className={`em-badge ${dueDate ? 'em-badge-clickable' : 'em-badge-add'}`}
-          title="Nastav due date"
+          title="Set due date"
         >
-          📅 {dueDate || 'bez termínu'}
+          📅 {dueDate || 'no date'}
         </button>
         {dueDate && (
           <button
@@ -338,7 +338,7 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
             onClick={() => setDueDate('')}
             disabled={pending}
             className="em-badge-clear"
-            title="Odstranit termín"
+            title="Remove due date"
           >
             ×
           </button>
@@ -356,7 +356,7 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
         <PriorityPicker value={priority} onChange={setPriority} disabled={pending} />
       </div>
       <div className="em-edit-actions">
-        <span className="em-edit-hint">Enter = uložit · Esc = zrušit</span>
+        <span className="em-edit-hint">Enter = save · Esc = cancel</span>
         <div className="em-edit-buttons">
           <button
             type="button"
@@ -364,7 +364,7 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
             disabled={pending}
             className="em-btn-secondary"
           >
-            Zrušit
+            Cancel
           </button>
           <button
             type="button"
@@ -372,7 +372,7 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
             disabled={pending || !text.trim()}
             className="em-btn-primary-accent"
           >
-            {pending ? '…' : 'Uložit'}
+            {pending ? '…' : 'Save'}
           </button>
         </div>
       </div>

@@ -19,6 +19,11 @@ export type PluginSettings = {
    */
   dailyFolderOverride: string;
   /**
+   * Heading sekce v daily note, pod kterou se přidávají / ze které se čtou
+   * dnešní tasky. Default `# Dnes`.
+   */
+  dailySectionHeading: string;
+  /**
    * Skrytí horní hlavičky (titulek + datum nav + filter bar + subtitle).
    * Užitečné na mobilu, kde header zabírá moc místa. Stav persistovaný.
    */
@@ -40,5 +45,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   // Generic plugin nemá hádat vault-specifické složky.
   excludedFolders: [],
   dailyFolderOverride: '',
+  dailySectionHeading: '# Dnes',
   headerCollapsed: false,
 };

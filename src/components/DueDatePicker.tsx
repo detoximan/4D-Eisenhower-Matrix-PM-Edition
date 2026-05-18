@@ -52,7 +52,7 @@ export function DueDatePicker({ currentDueDate, onChange, variant, overdue }: Pr
         className={`em-badge ${isBadgeWithDate ? 'em-badge-clickable' : 'em-badge-add'} ${
           overdue ? 'em-badge-overdue' : ''
         }`}
-        title={currentDueDate ? 'Klikni pro editaci termínu' : 'Přidat termín'}
+        title={currentDueDate ? 'Click to edit due date' : 'Add due date'}
       >
         {currentDueDate ? `📅 ${currentDueDate}` : '+ 📅'}
       </button>
@@ -65,7 +65,7 @@ export function DueDatePicker({ currentDueDate, onChange, variant, overdue }: Pr
             void onChange(null);
           }}
           className="em-badge-clear"
-          title="Odstranit termín"
+          title="Remove due date"
         >
           ×
         </button>

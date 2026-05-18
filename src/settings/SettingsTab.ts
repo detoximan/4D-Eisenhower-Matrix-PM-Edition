@@ -15,7 +15,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    // Pozn.: žádný plugin-name nadpis — Obsidian ho v settings renderuje sám.
+    // No plugin-name heading — Obsidian renders it itself.
 
     // === Daily folder override ===
     const coreFolder = getDailyNotesFolder(this.app, '');
@@ -24,11 +24,11 @@ export class MatrixSettingsTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName('Daily folder')
       .setDesc(
-        `Složka, kam plugin ukládá nové daily notes. Necháš-li prázdné, použije se konfigurace z core pluginu „Daily notes" — momentálně ${coreLabel}.`,
+        `Folder where new daily notes are created. Leave empty to use the core "Daily notes" plugin config — currently ${coreLabel}.`,
       )
       .addText((text) => {
         text
-          .setPlaceholder('např. 6_Daily-Tasks (nebo prázdné)')
+          .setPlaceholder('e.g. Daily (or leave empty)')
           .setValue(this.plugin.settings.dailyFolderOverride)
           .onChange(async (value) => {
             this.plugin.settings.dailyFolderOverride = value.trim();
@@ -38,14 +38,33 @@ export class MatrixSettingsTab extends PluginSettingTab {
         new FolderSuggest(this.app, text.inputEl);
       });
 
-    // === Excluded folders (Obsidian-native pattern: rows + add input) ===
+    // === Daily section heading ===
+    new Setting(containerEl)
+      .setName('Daily section heading')
+      .setDesc(
+        'Heading in the daily note under which today\'s tasks are read and added. New tasks go below it; if missing, it is created automatically.',
+      )
+      .addText((text) =>
+        text
+          .setPlaceholder('# Today')
+          .setValue(this.plugin.settings.dailySectionHeading)
+          .onChange(async (value) => {
+            const trimmed = value.trim();
+            // Fallback to default if the user clears it.
+            this.plugin.settings.dailySectionHeading = trimmed || '# Dnes';
+            await this.plugin.saveSettings();
+            this.plugin.notifyRepoConfigChanged();
+          }),
+      );
+
+    // === Excluded folders ===
     this.renderExcludedFoldersSection(containerEl);
 
     // === Reset ===
     new Setting(containerEl)
-      .setName('Resetovat na výchozí')
+      .setName('Reset to defaults')
       .setDesc(
-        'Smaže overrides — daily folder se vrátí na core config, vyloučené složky se vyprázdní.',
+        'Clears overrides — daily folder falls back to the core config, excluded folders are emptied.',
       )
       .addButton((btn) =>
         btn
@@ -62,16 +81,16 @@ export class MatrixSettingsTab extends PluginSettingTab {
   }
 
   /**
-   * Vyloučené složky — list řádků s × + input se suggesterem + Přidat.
-   * Vzor: native Obsidian "Vyloučené soubory" dialog.
+   * Excluded folders — list of rows with × + an add input with a folder
+   * suggester. Mirrors the native Obsidian "Excluded files" dialog.
    */
   private renderExcludedFoldersSection(parent: HTMLElement): void {
-    new Setting(parent).setName('Vyloučené složky').setHeading();
+    new Setting(parent).setName('Excluded folders').setHeading();
 
     const section = parent.createDiv({ cls: 'em-settings-excluded' });
 
     section.createEl('p', {
-      text: 'Tasky z těchto složek se v matici nezobrazují. Klikni × pro odebrání, nebo přidej novou složku dole.',
+      text: 'Tasks from these folders are hidden from the matrix. Click × to remove, or add a new folder below.',
       cls: 'setting-item-description',
     });
 
@@ -81,7 +100,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
     if (folders.length === 0) {
       list.createDiv({
         cls: 'em-excluded-empty',
-        text: 'Žádné vyloučené složky.',
+        text: 'No excluded folders.',
       });
     } else {
       for (const folder of folders) {
@@ -89,7 +108,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
         row.createSpan({ text: folder, cls: 'em-excluded-path' });
         const removeBtn = row.createEl('button', {
           cls: 'em-excluded-remove',
-          attr: { 'aria-label': `Odebrat ${folder}` },
+          attr: { 'aria-label': `Remove ${folder}` },
           text: '×',
         });
         removeBtn.addEventListener('click', async () => {
@@ -106,13 +125,13 @@ export class MatrixSettingsTab extends PluginSettingTab {
     const addInput = addRow.createEl('input', {
       type: 'text',
       cls: 'em-excluded-input',
-      attr: { placeholder: 'Přidej složku…' },
+      attr: { placeholder: 'Add a folder…' },
     });
     new FolderSuggest(this.app, addInput);
 
     const addBtn = addRow.createEl('button', {
       cls: 'mod-cta em-excluded-add-btn',
-      text: 'Přidat',
+      text: 'Add',
     });
 
     const tryAdd = async () => {

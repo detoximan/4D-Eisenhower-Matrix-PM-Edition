@@ -262,7 +262,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         await repo.toggleTask(task.sourceFile, task.lineIndex, today);
       } catch (e) {
         applyLocalToggle(task.sourceFile, task.lineIndex, task.checked);
-        showError(`Toggle selhal: ${String((e as Error).message ?? e)}`);
+        showError(`Toggle failed: ${String((e as Error).message ?? e)}`);
       }
     },
     [repo, today, applyLocalToggle],
@@ -273,7 +273,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       try {
         await repo.setDueDate(task.sourceFile, task.lineIndex, newDueDate);
       } catch (e) {
-        showError(`Změna termínu selhala: ${String((e as Error).message ?? e)}`);
+        showError(`Changing due date failed: ${String((e as Error).message ?? e)}`);
       }
     },
     [repo],
@@ -289,7 +289,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       try {
         await repo.updateTask(task.sourceFile, task.lineIndex, text, contextTags, options);
       } catch (e) {
-        showError(`Uložení selhalo: ${String((e as Error).message ?? e)}`);
+        showError(`Save failed: ${String((e as Error).message ?? e)}`);
         throw e;
       }
     },
@@ -306,7 +306,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       try {
         await repo.addTask(date, input.text, input.quadrant, input.dueDate, input.priority);
       } catch (e) {
-        showError(`Přidání selhalo: ${String((e as Error).message ?? e)}`);
+        showError(`Adding task failed: ${String((e as Error).message ?? e)}`);
         throw e;
       }
     },
@@ -317,7 +317,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     (task: Task, mode: PaneType | boolean = false) => {
       const file = app.vault.getFileByPath(task.sourceFile);
       if (!file) {
-        showError(`Soubor nenalezen: ${task.sourceFile}`);
+        showError(`File not found: ${task.sourceFile}`);
         return;
       }
       const leaf = app.workspace.getLeaf(mode);
@@ -447,7 +447,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         setTasks((prev) =>
           prev.map((t) => (taskKey(t.sourceFile, t.lineIndex) === id ? task : t)),
         );
-        showError(`Přesun selhal: ${String((err as Error).message ?? err)}`);
+        showError(`Move failed: ${String((err as Error).message ?? err)}`);
       }
     },
     [repo],
@@ -486,14 +486,14 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         {headerCollapsed ? (
           <div className="em-app-header em-app-header-compact">
             <span className="em-compact-info">
-              ⚡ Eisenhower Matrix · {tasks.length} tasků
+              ⚡ Eisenhower Matrix · {tasks.length} tasks
             </span>
             <button
               type="button"
               onClick={() => setHeaderCollapsed(false)}
               className="em-header-collapse-btn"
-              title="Rozbalit hlavičku"
-              aria-label="Rozbalit hlavičku"
+              title="Expand header"
+              aria-label="Expand header"
             >
               ▼
             </button>
@@ -516,7 +516,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
               onClick={anyCollapsed ? expandAll : collapseAll}
               className="em-btn-link"
             >
-              {anyCollapsed ? 'Rozbalit vše' : 'Sbalit vše'}
+              {anyCollapsed ? 'Expand all' : 'Collapse all'}
             </button>
             <label className="em-toggle">
               <input
@@ -524,14 +524,14 @@ export function MatrixApp({ app, repo, plugin }: Props) {
                 checked={showCompleted}
                 onChange={(e) => setShowCompleted(e.target.checked)}
               />
-              <span>Hotové</span>
+              <span>Done</span>
             </label>
             <button
               type="button"
               onClick={() => setHeaderCollapsed(true)}
               className="em-header-collapse-btn"
-              title="Sbalit celou hlavičku (uvolní místo)"
-              aria-label="Sbalit hlavičku"
+              title="Collapse the whole header (frees up space)"
+              aria-label="Collapse header"
             >
               ▲
             </button>
@@ -539,12 +539,12 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         </header>
 
         <p className="em-subtitle">
-          {formatCzechDate(date)}
-          {isPastOrFuture && <span className="em-warn"> (ne dnešek)</span>}
-          {loading && <span className="em-loading"> · načítám…</span>}
+          {formatDisplayDate(date)}
+          {isPastOrFuture && <span className="em-warn"> (not today)</span>}
+          {loading && <span className="em-loading"> · loading…</span>}
           {!loading && (
             <span className="em-stats">
-              {' '}· {tasks.length} tasků · skenováno {scannedFiles} souborů
+              {' '}· {tasks.length} tasks · {scannedFiles} files scanned
             </span>
           )}
         </p>
@@ -552,8 +552,9 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         {dayChangedBanner && (
           <div className="em-banner em-banner-warn">
             <span>
-              Od posledního otevření (<strong>{dayChangedBanner}</strong>) je nový den.
-              Přepnout na dnešek (<strong>{today}</strong>)?
+              A new day has started since you last opened this (
+              <strong>{dayChangedBanner}</strong>). Switch to today (
+              <strong>{today}</strong>)?
             </span>
             <div className="em-banner-actions">
               <button
@@ -561,14 +562,14 @@ export function MatrixApp({ app, repo, plugin }: Props) {
                 onClick={() => acknowledgeDayChange(true)}
                 className="em-btn-primary"
               >
-                Přepnout
+                Switch
               </button>
               <button
                 type="button"
                 onClick={() => acknowledgeDayChange(false)}
                 className="em-btn-secondary"
               >
-                Zůstat
+                Stay
               </button>
             </div>
           </div>
@@ -576,14 +577,14 @@ export function MatrixApp({ app, repo, plugin }: Props) {
 
         {error && (
           <div className="em-error" role="alert">
-            Chyba: {error}
+            Error: {error}
           </div>
         )}
 
         {!todayFileExists && !loading && (
           <div className="em-info">
-            Pro {date} zatím neexistuje daily note. Přidej první task přes <code>+</code>{' '}
-            v libovolném kvadrantu — soubor se vytvoří automaticky.
+            No daily note exists for {date} yet. Add the first task via <code>+</code>{' '}
+            in any quadrant — the file is created automatically.
           </div>
         )}
 
@@ -627,13 +628,13 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   );
 }
 
-function formatCzechDate(iso: string): string {
+function formatDisplayDate(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number);
   const date = new Date(y, m - 1, d);
-  const days = ['neděle', 'pondělí', 'úterý', 'středa', 'čtvrtek', 'pátek', 'sobota'];
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const months = [
-    'ledna', 'února', 'března', 'dubna', 'května', 'června',
-    'července', 'srpna', 'září', 'října', 'listopadu', 'prosince',
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
   ];
-  return `${days[date.getDay()]} ${d}. ${months[m - 1]} ${y}`;
+  return `${days[date.getDay()]} ${d} ${months[m - 1]} ${y}`;
 }

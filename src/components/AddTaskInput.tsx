@@ -100,7 +100,7 @@ export function AddTaskInput({ quadrant, onSubmit, onCancel, createTagSuggest }:
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder={`Nový task do ${quadrant}… (Enter)`}
+        placeholder={`New task in ${quadrant}… (Enter)`}
         disabled={pending}
         className="em-add-input em-add-input-text"
       />
@@ -110,7 +110,7 @@ export function AddTaskInput({ quadrant, onSubmit, onCancel, createTagSuggest }:
         value={tagsRaw}
         onChange={(e) => setTagsRaw(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="#tagy (autocomplete · mezerou oddělené · # se doplní)"
+        placeholder="#tags (autocomplete · space-separated · # added automatically)"
         disabled={pending}
         className="em-add-input em-add-input-tags"
       />
@@ -120,9 +120,9 @@ export function AddTaskInput({ quadrant, onSubmit, onCancel, createTagSuggest }:
           tabIndex={-1}
           onClick={openDatePicker}
           className={`em-badge ${dueDate ? 'em-badge-clickable' : 'em-badge-add'}`}
-          title="Nastav due date"
+          title="Set due date"
         >
-          📅 {dueDate || 'bez termínu'}
+          📅 {dueDate || 'no date'}
         </button>
         {dueDate && (
           <button
@@ -130,7 +130,7 @@ export function AddTaskInput({ quadrant, onSubmit, onCancel, createTagSuggest }:
             tabIndex={-1}
             onClick={() => setDueDate('')}
             className="em-badge-clear"
-            title="Odstranit termín"
+            title="Remove due date"
           >
             ×
           </button>
@@ -153,7 +153,7 @@ export function AddTaskInput({ quadrant, onSubmit, onCancel, createTagSuggest }:
       </div>
 
       <div className="em-edit-actions">
-        <span className="em-edit-hint">Enter = uložit · Esc = zrušit</span>
+        <span className="em-edit-hint">Enter = save · Esc = cancel</span>
         <div className="em-edit-buttons">
           <button
             type="button"
@@ -161,7 +161,7 @@ export function AddTaskInput({ quadrant, onSubmit, onCancel, createTagSuggest }:
             disabled={pending}
             className="em-btn-secondary"
           >
-            Zrušit
+            Cancel
           </button>
           <button
             type="button"
@@ -169,7 +169,7 @@ export function AddTaskInput({ quadrant, onSubmit, onCancel, createTagSuggest }:
             disabled={pending || !text.trim()}
             className="em-btn-primary-accent"
           >
-            {pending ? '…' : 'Uložit'}
+            {pending ? '…' : 'Save'}
           </button>
         </div>
       </div>

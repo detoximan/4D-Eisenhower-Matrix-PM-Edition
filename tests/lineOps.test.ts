@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  appendTaskUnderDnes,
+  appendTaskUnderHeading,
   buildTaskLine,
   moveLineQuadrant,
   setDueDateOnLine,
@@ -152,7 +152,7 @@ describe('updateLineTextAndTags', () => {
   });
 });
 
-describe('appendTaskUnderDnes', () => {
+describe('appendTaskUnderHeading', () => {
   it('inserts after existing tasks under # Dnes', () => {
     const content = [
       '---',
@@ -164,7 +164,7 @@ describe('appendTaskUnderDnes', () => {
       '',
       '## Other',
     ].join('\n');
-    const r = appendTaskUnderDnes(content, 'new task', 'DECIDE', '2026-05-14');
+    const r = appendTaskUnderHeading(content, '# Dnes', 'new task', 'DECIDE', '2026-05-14');
     expect(r.lineIndex).toBe(6);
     const lines = r.newContent.split('\n');
     expect(lines[5]).toBe('- [ ] #DO existing');
@@ -180,7 +180,7 @@ describe('appendTaskUnderDnes', () => {
       '# Notes',
       'text',
     ].join('\n');
-    const r = appendTaskUnderDnes(content, 'fresh', 'DO', '2026-05-14');
+    const r = appendTaskUnderHeading(content, '# Dnes', 'fresh', 'DO', '2026-05-14');
     expect(r.newContent).toContain('# Dnes');
     expect(r.newContent).toContain('- [ ] #DO 🛫 2026-05-14 fresh');
   });

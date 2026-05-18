@@ -1,7 +1,7 @@
 import type { App, TFile } from 'obsidian';
 import { parseAllTasks, parseDaily } from '../core/parser.ts';
 import {
-  appendTaskUnderDnes,
+  appendTaskUnderHeading,
   moveLineQuadrant,
   setDueDateOnLine,
   toggleLine,
@@ -25,18 +25,25 @@ const DATE_FILE_RE = /^(\d{4}-\d{2}-\d{2})\.md$/;
 export class ObsidianTaskRepo {
   private excludedFolders: string[];
   private dailyFolderOverride: string;
+  private sectionHeading: string;
 
   constructor(
     private app: App,
     excludedFolders: string[] = [],
     dailyFolderOverride: string = '',
+    sectionHeading: string = '# Dnes',
   ) {
     this.excludedFolders = excludedFolders;
     this.dailyFolderOverride = dailyFolderOverride;
+    this.sectionHeading = sectionHeading;
   }
 
   setDailyFolderOverride(folder: string) {
     this.dailyFolderOverride = folder;
+  }
+
+  setSectionHeading(heading: string) {
+    this.sectionHeading = heading;
   }
 
   // ============================================================
@@ -57,7 +64,7 @@ export class ObsidianTaskRepo {
     if (dailyFile) {
       todayFileExists = true;
       const raw = await this.app.vault.cachedRead(dailyFile);
-      const { tasks } = parseDaily(raw);
+      const { tasks } = parseDaily(raw, this.sectionHeading);
       for (const t of tasks) {
         dnesTasks.push({ ...t, sourceFile: dailyFile.path, isFromDnes: true });
       }
@@ -166,8 +173,8 @@ export class ObsidianTaskRepo {
   }
 
   /**
-   * Přidá task pod `# Dnes` v daily note pro `date`. Pokud daily note neexistuje,
-   * vytvoří ji přes core „Daily notes" template (nebo minimum scaffold).
+   * Přidá task pod sekční heading v daily note pro `date`. Pokud daily note
+   * neexistuje, vytvoří ji přes core „Daily notes" template (nebo minimum scaffold).
    *
    * Vrací `sourceFile` (cestu k daily souboru) — UI ji pak může použít pro refetch.
    */
@@ -178,12 +185,25 @@ export class ObsidianTaskRepo {
     dueDate?: string | null,
     priority?: Priority | null,
   ): Promise<{ sourceFile: string; lineIndex: number; newLine: string }> {
-    const file = await ensureDailyExists(this.app, date, this.dailyFolderOverride);
+    const file = await ensureDailyExists(
+      this.app,
+      date,
+      this.sectionHeading,
+      this.dailyFolderOverride,
+    );
 
     let lineIndex = -1;
     let newLine = '';
     await this.app.vault.process(file, (content) => {
-      const result = appendTaskUnderDnes(content, text, quadrant, date, dueDate, priority);
+      const result = appendTaskUnderHeading(
+        content,
+        this.sectionHeading,
+        text,
+        quadrant,
+        date,
+        dueDate,
+        priority,
+      );
       lineIndex = result.lineIndex;
       newLine = result.newLine;
       return result.newContent;

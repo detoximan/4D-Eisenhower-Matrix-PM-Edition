@@ -30,12 +30,12 @@ export const QUADRANT_META: Record<
 > = {
   DO: {
     label: 'DO',
-    subtitle: 'Důležité + Urgent',
+    subtitle: 'Important + Urgent',
     accent: 'var(--color-red)',
   },
   DECIDE: {
     label: 'DECIDE',
-    subtitle: 'Důležité + Less Urgent',
+    subtitle: 'Important + Less Urgent',
     accent: 'var(--color-blue)',
   },
   DELEGATE: {
@@ -50,7 +50,7 @@ export const QUADRANT_META: Record<
   },
   OPEN: {
     label: 'OPEN',
-    subtitle: 'Bez quadrant tagu',
+    subtitle: 'No quadrant tag',
     accent: 'var(--text-muted)',
   },
 };
@@ -61,9 +61,9 @@ export const PRIORITY_META: Record<
   Priority,
   { emoji: string; label: string; tone: string }
 > = {
-  highest: { emoji: '🔺', label: 'Nejvyšší', tone: 'var(--color-red)' },
-  high: { emoji: '⏫', label: 'Vysoká', tone: 'var(--color-orange)' },
-  medium: { emoji: '🔼', label: 'Střední', tone: 'var(--color-yellow)' },
-  low: { emoji: '🔽', label: 'Nízká', tone: 'var(--color-cyan)' },
-  lowest: { emoji: '⏬', label: 'Nejnižší', tone: 'var(--text-muted)' },
+  highest: { emoji: '🔺', label: 'Highest', tone: 'var(--color-red)' },
+  high: { emoji: '⏫', label: 'High', tone: 'var(--color-orange)' },
+  medium: { emoji: '🔼', label: 'Medium', tone: 'var(--color-yellow)' },
+  low: { emoji: '🔽', label: 'Low', tone: 'var(--color-cyan)' },
+  lowest: { emoji: '⏬', label: 'Lowest', tone: 'var(--text-muted)' },
 };

@@ -14,7 +14,6 @@ const LEADING_TAGS_FULL_RE = /^(\s*-\s+\[[ xX]\]\s+(?:#[\p{L}\p{N}_-]+\s+)*)/u;
 const LEADING_QUADRANT_TAG_RE =
   /^(\s*-\s+\[[ xX]\]\s+)(#(?:DO|DECIDE|DELEGATE|DELETE))(\s+|$)/i;
 const LEADING_NO_TAG_RE = /^(\s*-\s+\[[ xX]\]\s+)(.*)$/;
-const DNES_HEADING_RE = /^#\s+Dnes\s*$/i;
 const FRONTMATTER_END_RE = /^---\s*$/;
 
 const QUADRANT_TAG_SET = new Set(['#DO', '#DECIDE', '#DELEGATE', '#DELETE']);
@@ -209,7 +208,7 @@ export function updateLineTextAndTags(
 }
 
 // ============================================================
-// Append nový task pod `# Dnes` sekci (full-content op)
+// Append nový task pod konfigurovatelnou sekci (full-content op)
 // ============================================================
 
 export type AppendResult = {
@@ -220,10 +219,12 @@ export type AppendResult = {
 
 /**
  * Příjme celý obsah daily souboru, vrátí nový obsah s vloženým taskem.
- * Pokud `# Dnes` heading chybí, vloží ho hned za frontmatter.
+ * Pokud sekční heading (`sectionHeading`, např. `# Dnes`) chybí, vloží ho
+ * hned za frontmatter.
  */
-export function appendTaskUnderDnes(
+export function appendTaskUnderHeading(
   content: string,
+  sectionHeading: string,
   text: string,
   quadrant: Quadrant,
   todayISO: string,
@@ -232,12 +233,15 @@ export function appendTaskUnderDnes(
 ): AppendResult {
   const eol = content.includes('\r\n') ? '\r\n' : '\n';
   const lines = content.split(/\r?\n/);
+  const headingNorm = sectionHeading.trim().toLowerCase();
 
-  let dnesIdx = lines.findIndex((l) => DNES_HEADING_RE.test(l));
+  let dnesIdx = lines.findIndex(
+    (l) => /^#+\s/.test(l) && l.trim().toLowerCase() === headingNorm,
+  );
   if (dnesIdx === -1) {
     const fmEnd = findFrontmatterEnd(lines);
     const insertAt = fmEnd + 1;
-    lines.splice(insertAt, 0, '', '# Dnes', '');
+    lines.splice(insertAt, 0, '', sectionHeading.trim(), '');
     dnesIdx = insertAt + 1;
   }
 

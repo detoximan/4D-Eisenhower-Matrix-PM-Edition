@@ -32,8 +32,6 @@ const EMOJI_TO_PRIORITY: Record<string, Priority> = {
   '⏬': 'lowest',
 };
 
-const DNES_HEADING_RE = /^#\s+Dnes\s*$/i;
-
 export type ParsedTask = {
   lineIndex: number;
   raw: string;
@@ -48,17 +46,22 @@ export type ParsedTask = {
 };
 
 /**
- * Parsuje celý MD soubor. Vrací tasky z sekce `# Dnes` (pokud existuje).
+ * Parsuje celý MD soubor. Vrací tasky z konfigurovatelné sekce
+ * (`sectionHeading`, např. `# Dnes` / `# Today`).
  */
-export function parseDaily(raw: string): {
+export function parseDaily(
+  raw: string,
+  sectionHeading: string,
+): {
   tasks: ParsedTask[];
-  dnesHeadingLine: number | null;
+  sectionHeadingLine: number | null;
 } {
+  const headingNorm = sectionHeading.trim().toLowerCase();
   const lines = raw.split(/\r?\n/);
   const tasks: ParsedTask[] = [];
-  let inDnes = false;
+  let inSection = false;
   let inCodeBlock = false;
-  let dnesHeadingLine: number | null = null;
+  let sectionHeadingLine: number | null = null;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -70,22 +73,22 @@ export function parseDaily(raw: string): {
     if (inCodeBlock) continue;
 
     if (/^#+\s/.test(line)) {
-      if (DNES_HEADING_RE.test(line)) {
-        inDnes = true;
-        dnesHeadingLine = i;
+      if (line.trim().toLowerCase() === headingNorm) {
+        inSection = true;
+        sectionHeadingLine = i;
       } else {
-        inDnes = false;
+        inSection = false;
       }
       continue;
     }
 
-    if (!inDnes) continue;
+    if (!inSection) continue;
 
     const task = parseTaskLine(line, i);
     if (task) tasks.push(task);
   }
 
-  return { tasks, dnesHeadingLine };
+  return { tasks, sectionHeadingLine };
 }
 
 /**

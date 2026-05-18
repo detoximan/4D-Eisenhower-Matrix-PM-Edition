@@ -71,12 +71,12 @@ export function PriorityPicker({ value, onChange, disabled }: Props) {
         setOpen((v) => !v);
       }}
       className={`em-badge ${value ? 'em-badge-clickable' : 'em-badge-add'}`}
-      title="Nastav prioritu"
+      title="Set priority"
       style={value ? { color: PRIORITY_META[value].tone } : undefined}
     >
       {value
         ? `${PRIORITY_META[value].emoji} ${PRIORITY_META[value].label}`
-        : '+ ⏫ priorita'}
+        : '+ ⏫ priority'}
     </button>
   );
 
@@ -122,7 +122,7 @@ export function PriorityPicker({ value, onChange, disabled }: Props) {
                 className="em-menu-item em-menu-item-danger"
                 role="menuitem"
               >
-                Odstranit prioritu
+                Remove priority
               </button>
             )}
           </div>,

@@ -41,8 +41,8 @@ export function DateNav({ date, today, existingDates, onChange }: Props) {
         type="button"
         onClick={() => onChange(prev)}
         className="em-dn-btn"
-        title={`Předchozí den (${prev})`}
-        aria-label="Předchozí den"
+        title={`Previous day (${prev})`}
+        aria-label="Previous day"
       >
         ← {dotIf(prev)}
       </button>
@@ -51,7 +51,7 @@ export function DateNav({ date, today, existingDates, onChange }: Props) {
         type="button"
         onClick={openPicker}
         className="em-dn-date"
-        title="Vyber datum"
+        title="Pick a date"
       >
         {date}
       </button>
@@ -69,8 +69,8 @@ export function DateNav({ date, today, existingDates, onChange }: Props) {
         type="button"
         onClick={() => onChange(next)}
         className="em-dn-btn"
-        title={`Další den (${next})`}
-        aria-label="Další den"
+        title={`Next day (${next})`}
+        aria-label="Next day"
       >
         → {dotIf(next)}
       </button>
@@ -80,9 +80,9 @@ export function DateNav({ date, today, existingDates, onChange }: Props) {
           type="button"
           onClick={() => onChange(today)}
           className="em-dn-today"
-          title={`Skoč na dnešek (${today})`}
+          title={`Jump to today (${today})`}
         >
-          Dnes
+          Today
         </button>
       )}
     </div>

@@ -10,7 +10,7 @@ type Props = {
 };
 
 function chipLabel(tag: string): string {
-  return tag === UNTAGGED_FILTER ? 'Ostatní' : tag;
+  return tag === UNTAGGED_FILTER ? 'Other' : tag;
 }
 
 export function FilterBar({
@@ -27,7 +27,7 @@ export function FilterBar({
 
   return (
     <div className="em-filterbar">
-      <span className="em-filterbar-label">Filtr:</span>
+      <span className="em-filterbar-label">Filter:</span>
       {availableTags.map(({ tag, count }) => {
         const isSelected = selectedTags.some(
           (s) => s.toLowerCase() === tag.toLowerCase(),
@@ -42,7 +42,7 @@ export function FilterBar({
               isUntagged ? 'em-chip-untagged' : ''
             }`}
             aria-pressed={isSelected}
-            title={isUntagged ? 'Tasky bez kontextového tagu' : undefined}
+            title={isUntagged ? 'Tasks without a context tag' : undefined}
           >
             <span>{chipLabel(tag)}</span>
             <span className="em-chip-count">{count}</span>

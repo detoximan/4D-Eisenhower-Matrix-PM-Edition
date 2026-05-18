@@ -6,7 +6,7 @@ Visualize tasks across your entire vault in a **5-quadrant Eisenhower matrix** (
 
 > A morning dashboard for deciding *what to do now*: open it, see tasks split by priority, check off the done ones, add new ones. Markdown files stay the source of truth — the plugin is just a visual layer on top.
 
-> **Note:** the plugin UI is currently in Czech. English localization is on the roadmap. The screenshots and some labels below show Czech text.
+> **Note:** the screenshots below were taken before the UI was localized — they still show Czech labels. The plugin UI is now in English.
 
 <table>
   <tr>
@@ -115,17 +115,16 @@ The manual lever for reordering is **priority** — set it and the task jumps up
 `Settings → 4D Eisenhower Matrix`:
 
 - **Daily folder** — where new daily notes are created. Empty = respect the core "Daily notes" plugin config. Override = a custom path (with a folder suggester).
+- **Daily section heading** — the heading in the daily note under which today's tasks are read and added. Default: `# Dnes`. Set it to whatever you use (e.g. `# Today`, `## Tasks`).
 - **Excluded folders** — tasks from these folders are ignored. Default: none — add the folders you want excluded yourself. UI with + / × buttons and a folder suggester.
 
 ## Daily note integration
 
-The plugin looks for a `# Dnes` ("Today" in Czech) heading in the daily note. New tasks are inserted under that heading.
+The plugin looks for a configurable section heading in the daily note (set via **Settings → Daily section heading**, default `# Dnes`). New tasks are inserted under that heading.
 
 If a daily note for the given day doesn't exist and you add the first task, the plugin **creates it automatically**:
 1. If the core "Daily notes" plugin has a **template** configured, it uses that (expanding `{{date}}`, `{{title}}`, `{{time}}`).
-2. Otherwise it falls back to a minimal scaffold (frontmatter + a `# Dnes` heading).
-
-> The section heading is currently hardcoded to `# Dnes` (Czech). If you'd like a different one (e.g. `# Today`), [open an issue](https://github.com/krcaljaroslav/4D-eisenhower-matrix/issues) — it can be made configurable.
+2. Otherwise it falls back to a minimal scaffold (frontmatter + the configured section heading).
 
 ## Mobile
 
@@ -137,18 +136,14 @@ Works on Android (`isDesktopOnly: false`; iOS untested but should work).
 
 ## Roadmap
 
-- [ ] Configurable section heading (`# Dnes` → user choice)
 - [ ] Quick-add task via the Command Palette (without opening the view)
 - [ ] Keyboard shortcuts inside the view (J/K navigation, X toggle, N new task)
 - [ ] Full moment.js syntax in daily templates (currently only `{{date}}` / `{{title}}` / `{{time}}`)
-- [ ] English UI localization (currently Czech)
 
 Missing something? [Open an issue](https://github.com/krcaljaroslav/4D-eisenhower-matrix/issues).
 
 ## Known limitations
 
-- The UI is currently in **Czech** (Sbalit vše = Collapse all, Hotové = Done, Žádné tasky = No tasks, etc.). English localization is on the roadmap.
-- The daily heading is hardcoded to `# Dnes`.
 - Manual ordering across files (one task in a daily note, another in a project) is not supported — the sort is deterministic.
 
 ## Bugs / contributing

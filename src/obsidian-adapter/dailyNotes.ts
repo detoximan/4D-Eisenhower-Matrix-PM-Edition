@@ -58,6 +58,7 @@ export function buildDailyNotePath(app: App, isoDate: string, override?: string)
 export async function ensureDailyExists(
   app: App,
   isoDate: string,
+  sectionHeading: string,
   override?: string,
 ): Promise<TFile> {
   const targetPath = buildDailyNotePath(app, isoDate, override);
@@ -88,24 +89,28 @@ export async function ensureDailyExists(
   }
 
   if (!initialContent) {
-    initialContent = buildMinimalScaffold(isoDate);
+    initialContent = buildMinimalScaffold(isoDate, sectionHeading);
   }
 
-  // Ujistíme se, že template obsahuje `# Dnes` heading (taskAggregator
-  // a appendTaskUnderDnes z lineOps ho potřebuje).
-  if (!/^#\s+Dnes\s*$/im.test(initialContent)) {
-    initialContent = `${initialContent.trimEnd()}\n\n# Dnes\n`;
+  // Ujistíme se, že obsah obsahuje sekční heading (aggregator + appendTaskUnderHeading
+  // z lineOps ho potřebuje).
+  const headingNorm = sectionHeading.trim().toLowerCase();
+  const hasHeading = initialContent
+    .split(/\r?\n/)
+    .some((l) => /^#+\s/.test(l) && l.trim().toLowerCase() === headingNorm);
+  if (!hasHeading) {
+    initialContent = `${initialContent.trimEnd()}\n\n${sectionHeading.trim()}\n`;
   }
 
   return await app.vault.create(targetPath, initialContent);
 }
 
-function buildMinimalScaffold(isoDate: string): string {
+function buildMinimalScaffold(isoDate: string, sectionHeading: string): string {
   const d = parseISODate(isoDate);
-  const weekdays = ['neděle', 'pondělí', 'úterý', 'středa', 'čtvrtek', 'pátek', 'sobota'];
+  const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const months = [
-    'ledna', 'února', 'března', 'dubna', 'května', 'června',
-    'července', 'srpna', 'září', 'října', 'listopadu', 'prosince',
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
   ];
   const weekday = weekdays[d.getDay()];
   const month = months[d.getMonth()];
@@ -117,9 +122,9 @@ function buildMinimalScaffold(isoDate: string): string {
     '  - daily',
     '---',
     '',
-    `# ${weekday} ${d.getDate()}. ${month} ${d.getFullYear()}`,
+    `# ${weekday} ${d.getDate()} ${month} ${d.getFullYear()}`,
     '',
-    '# Dnes',
+    sectionHeading.trim(),
     '',
   ].join('\n');
 }

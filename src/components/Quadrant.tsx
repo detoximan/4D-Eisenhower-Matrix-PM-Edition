@@ -73,8 +73,8 @@ export function Quadrant({
           onClick={onToggleCollapsed}
           className="em-quadrant-collapse"
           aria-expanded={!collapsed}
-          aria-label={collapsed ? `Rozbalit ${meta.label}` : `Sbalit ${meta.label}`}
-          title={collapsed ? 'Rozbalit kvadrant' : 'Sbalit kvadrant'}
+          aria-label={collapsed ? `Expand ${meta.label}` : `Collapse ${meta.label}`}
+          title={collapsed ? 'Expand quadrant' : 'Collapse quadrant'}
         >
           {collapsed ? '▶' : '▼'}
         </button>
@@ -87,8 +87,8 @@ export function Quadrant({
             type="button"
             onClick={openAdder}
             className="em-quadrant-add"
-            title="Přidat task"
-            aria-label={`Přidat task do ${meta.label}`}
+            title="Add task"
+            aria-label={`Add task to ${meta.label}`}
           >
             +
           </button>
@@ -110,7 +110,7 @@ export function Quadrant({
             />
           )}
           {tasks.length === 0 && !adding ? (
-            <p className="em-empty">Žádné tasky</p>
+            <p className="em-empty">No tasks</p>
           ) : (
             <ul className="em-task-list">
               {tasks.map((t) => {

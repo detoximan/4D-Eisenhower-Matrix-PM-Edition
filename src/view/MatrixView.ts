@@ -21,6 +21,7 @@ export class MatrixView extends ItemView {
       this.app,
       plugin.settings.excludedFolders,
       plugin.settings.dailyFolderOverride,
+      plugin.settings.dailySectionHeading,
     );
   }
 
@@ -51,6 +52,7 @@ export class MatrixView extends ItemView {
     this.unregisterCallback = this.plugin.registerRepoConfigCallback(() => {
       this.repo.setExcludedFolders(this.plugin.settings.excludedFolders);
       this.repo.setDailyFolderOverride(this.plugin.settings.dailyFolderOverride);
+      this.repo.setSectionHeading(this.plugin.settings.dailySectionHeading);
       // Bump rev — MatrixApp se přerenderuje a refetchne
       this.remount();
     });
