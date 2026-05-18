@@ -150,8 +150,28 @@ export function AddTaskInput({ quadrant, onSubmit, onCancel, createTagSuggest }:
         />
 
         <PriorityPicker value={priority} onChange={setPriority} disabled={pending} />
+      </div>
 
-        <span className="em-add-hint">Enter = uložit · Esc = zrušit</span>
+      <div className="em-edit-actions">
+        <span className="em-edit-hint">Enter = uložit · Esc = zrušit</span>
+        <div className="em-edit-buttons">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={pending}
+            className="em-btn-secondary"
+          >
+            Zrušit
+          </button>
+          <button
+            type="button"
+            onClick={() => void submit()}
+            disabled={pending || !text.trim()}
+            className="em-btn-primary-accent"
+          >
+            {pending ? '…' : 'Uložit'}
+          </button>
+        </div>
       </div>
     </div>
   );
