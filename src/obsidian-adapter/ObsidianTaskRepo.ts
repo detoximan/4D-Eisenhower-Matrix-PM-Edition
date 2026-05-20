@@ -1,4 +1,4 @@
-import type { App, TFile } from 'obsidian';
+import { MarkdownView, type App, type TFile } from 'obsidian';
 import { parseAllTasks, parseDaily } from '../core/parser.ts';
 import {
   appendTaskUnderHeading,
@@ -209,7 +209,26 @@ export class ObsidianTaskRepo {
       return result.newContent;
     });
 
+    // U právě vytvořeného daily souboru se občas stane, že už otevřené
+    // reading view nezareaguje na první modify event a uživatel pak nový
+    // task v náhledu nevidí, dokud nepřepne do edit modu. Proaktivně
+    // překreslíme všechny otevřené preview viewy téhož souboru.
+    this.refreshOpenPreviews(file);
+
     return { sourceFile: file.path, lineIndex, newLine };
+  }
+
+  private refreshOpenPreviews(file: TFile): void {
+    this.app.workspace.iterateAllLeaves((leaf) => {
+      const view = leaf.view;
+      if (
+        view instanceof MarkdownView &&
+        view.file?.path === file.path &&
+        view.getMode() === 'preview'
+      ) {
+        view.previewMode?.rerender(true);
+      }
+    });
   }
 
   // ============================================================

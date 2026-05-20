@@ -51,8 +51,23 @@ export class TagSuggest extends AbstractInputSuggest<string> {
 
     // Trailing space — uživatel může rovnou psát další tag.
     const newValue = newTokens.join(' ') + ' ';
-    this.inputEl.value = newValue;
+
+    // React drží interní value tracker; nastavení .value přímo ho obejde
+    // a onChange handler v Reactu se nezavolá → controlled state ve formu
+    // by zůstal s tím, co uživatel naťukal před výběrem (tj. selection by
+    // se po Save „ztratila"). Použijeme nativní setter z prototype, aby
+    // React změnu zaregistroval jako legitimní user input.
+    const nativeSetter = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      'value',
+    )?.set;
+    if (nativeSetter) {
+      nativeSetter.call(this.inputEl, newValue);
+    } else {
+      this.inputEl.value = newValue;
+    }
     this.inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+
     this.inputEl.focus();
     this.close();
   }
