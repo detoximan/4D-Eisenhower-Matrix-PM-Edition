@@ -1104,3 +1104,15 @@ button.em-priority {
 .em-excluded-add-btn {
   flex-shrink: 0;
 }
+
+/* === Tag autocomplete dropdown (TagSuggest) ===
+   Některé komunitní themes (např. Wasp) přepisují
+   --background-modifier-hover na téměř průhlednou hodnotu, takže
+   defaultní podsvícení vybraného řádku v Obsidian suggesteru je
+   nečitelné. Vlastní třída + accent barva to vyřeší napříč všemi
+   themes (accent je uživatelská barva, themes ji nesahají). */
+.em-tag-suggestion.is-selected,
+.suggestion-item.em-tag-suggestion.is-selected {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+}

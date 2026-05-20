@@ -36,6 +36,11 @@ export class TagSuggest extends AbstractInputSuggest<string> {
   }
 
   renderSuggestion(tag: string, el: HTMLElement): void {
+    // Vlastní třída → můžeme spolehlivě nastylovat vybraný řádek
+    // přes accent barvu, která je čitelná v každém theme (některé
+    // komunitní themes přepisují default --background-modifier-hover
+    // na skoro průhlednou hodnotu a vybraný řádek pak není vidět).
+    el.addClass('em-tag-suggestion');
     el.setText(tag);
   }
 
