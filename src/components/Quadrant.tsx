@@ -16,6 +16,7 @@ type Props = {
   onToggleCollapsed: () => void;
   graceMap: Map<string, number>;
   onToggleTask: (task: Task) => void;
+  onSetStatus: (task: Task, newStatus: string) => Promise<void>;
   onSetDueDate: (task: Task, newDueDate: string | null) => Promise<void>;
   onUpdateTask: (
     task: Task,
@@ -44,6 +45,7 @@ export function Quadrant({
   onToggleCollapsed,
   graceMap,
   onToggleTask,
+  onSetStatus,
   onSetDueDate,
   onUpdateTask,
   onAddTask,
@@ -126,6 +128,7 @@ export function Quadrant({
                     isActiveDrag={activeTaskId === key}
                     compact={compact}
                     onToggle={() => onToggleTask(t)}
+                    onSetStatus={(s) => onSetStatus(t, s)}
                     onSetDueDate={(d) => onSetDueDate(t, d)}
                     onUpdateTask={(text, tags, opts) => onUpdateTask(t, text, tags, opts)}
                     onOpenSource={(mode) => onOpenSource(t, mode)}

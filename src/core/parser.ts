@@ -7,7 +7,9 @@ import type { Priority, Quadrant } from './types.ts';
 
 const QUADRANT_TAGS = ['#DO', '#DECIDE', '#DELEGATE', '#DELETE'] as const;
 
-const TASK_LINE = /^(\s*-\s+\[)([ xX])(\]\s+)(.*)$/;
+// `[^\]]` = jakýkoli stav uvnitř hranatých závorek (kromě samotného `]`).
+// Plugin pak rozliší 6 Basic stavů + ostatní (viz TASK_STATUSES v types.ts).
+const TASK_LINE = /^(\s*-\s+\[)([^\]])(\]\s+)(.*)$/;
 // Unicode-aware: matchuje tagy s diakritikou (#Osobní, #Příští, #Důležité…).
 const TAG_TOKEN = /#[\p{L}\p{N}_-]+/gu;
 
@@ -35,6 +37,7 @@ const EMOJI_TO_PRIORITY: Record<string, Priority> = {
 export type ParsedTask = {
   lineIndex: number;
   raw: string;
+  status: string;
   checked: boolean;
   text: string;
   quadrant: Quadrant;
@@ -122,7 +125,8 @@ export function parseTaskLine(line: string, lineIndex: number): ParsedTask | nul
   const m = TASK_LINE.exec(line);
   if (!m) return null;
 
-  const checked = m[2].toLowerCase() === 'x';
+  const status = m[2];
+  const checked = status.toLowerCase() === 'x';
   const body = m[4];
 
   const quadrant = determineQuadrant(body);
@@ -156,6 +160,7 @@ export function parseTaskLine(line: string, lineIndex: number): ParsedTask | nul
   return {
     lineIndex,
     raw: line,
+    status,
     checked,
     text,
     quadrant,

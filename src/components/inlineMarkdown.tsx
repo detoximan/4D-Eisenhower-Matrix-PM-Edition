@@ -5,11 +5,16 @@ import { createElement, type ReactNode } from 'react';
  * ZÁKLADNÍ formátování:
  *   **tučné**  ·  *kurzíva*  ·  ~~přeškrtnuté~~  ·  `kód`
  *
+ * Plus: pokud text začíná `# ` až `###### `, vykreslí se jako nadpis
+ * (větší + tučné, vnitřek se dál parsuje inline).
+ *
  * NErenderuje #tagy ani [[odkazy]] — ty zůstávají jako plain text
  * (tagy má karta jako vlastní badge, odkazy nechceme klikatelné).
  */
 
 type InlineTag = 'strong' | 'em' | 'del' | 'code';
+
+const HEADING_RE = /^(#{1,6})\s+(.*)$/;
 
 // Pořadí je důležité: `**` musí být před `*`, aby se na shodném indexu
 // vyhodnotil bold dřív než kurzíva.
@@ -45,6 +50,18 @@ export function renderInlineMarkdown(text: string): ReactNode {
 
     return [...(before.length > 0 ? [before] : []), el, ...parse(after)];
   };
+
+  // Nadpis na začátku → obal vnitřek do <span> s heading třídou.
+  const headingMatch = HEADING_RE.exec(text);
+  if (headingMatch) {
+    const level = headingMatch[1].length;
+    const innerNodes = parse(headingMatch[2]);
+    return createElement(
+      'span',
+      { className: `em-task-heading em-task-heading-${level}` },
+      innerNodes.length === 1 ? innerNodes[0] : innerNodes,
+    );
+  }
 
   const nodes = parse(text);
   return nodes.length === 1 ? nodes[0] : nodes;

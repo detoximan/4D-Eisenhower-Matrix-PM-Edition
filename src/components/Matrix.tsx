@@ -13,6 +13,7 @@ type Props = {
   compact: boolean;
   onToggleCollapsed: (q: QuadrantKind) => void;
   onToggleTask: (task: Task) => void;
+  onSetStatus: (task: Task, newStatus: string) => Promise<void>;
   onSetDueDate: (task: Task, newDueDate: string | null) => Promise<void>;
   onUpdateTask: (
     task: Task,
@@ -58,6 +59,7 @@ export function Matrix(props: Props) {
       compact={props.compact}
       onToggleCollapsed={() => props.onToggleCollapsed(q)}
       onToggleTask={props.onToggleTask}
+      onSetStatus={props.onSetStatus}
       onSetDueDate={props.onSetDueDate}
       onUpdateTask={props.onUpdateTask}
       onAddTask={props.onAddTask}

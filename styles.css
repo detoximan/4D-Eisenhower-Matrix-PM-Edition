@@ -624,6 +624,16 @@
   color: var(--text-muted);
 }
 
+/* Canceled task ([-]) — vizuálně stejné jako done (oba jsou „closed"). */
+.em-task-canceled {
+  opacity: 0.7;
+}
+
+.em-task-canceled .em-task-text {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
 /*
  * Originál tasku během aktivního drágu — zešedne, aby uživatel viděl,
  * který task se přesouvá. Řízeno přes activeTaskId z parentu (deterministické,
@@ -1143,11 +1153,95 @@ button.em-priority {
    Řádek 1 = text ořezaný „…" na šířku karty, řádek 2 = priorita +
    due date. Tagy / cesta / start-done badge jsou v compact skryté. */
 .em-task-text-compact {
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+  /* line-clamp si poradí s ořezem; nepotřebujeme nowrap */
 }
 
 .em-task-body-compact {
   gap: var(--size-2-1);
 }
+
+/* === Status checkbox (6 Basic stavů) ===
+   Vlastní button místo nativního <input type="checkbox"> — zobrazí
+   aktuální stav podle atributu data-task. Klik = klasický toggle
+   ([ ] ↔ [x]); pravý klik / kontextové menu nabídne všechny stavy. */
+.em-task-status {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1.5px solid var(--text-muted);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-monospace);
+  font-size: 13px;
+  line-height: 1;
+  color: var(--text-muted);
+}
+
+.em-task-status:hover {
+  border-color: var(--interactive-accent);
+}
+
+/* Done [x] / [X] — vyplněný accent, čistě bílý fajfka. */
+.em-task-status[data-task='x'],
+.em-task-status[data-task='X'] {
+  background: var(--interactive-accent);
+  border-color: var(--interactive-accent);
+}
+.em-task-status[data-task='x']::after,
+.em-task-status[data-task='X']::after {
+  content: '✓';
+  color: var(--text-on-accent);
+  font-weight: bold;
+}
+
+/* Incomplete [/] — polovina vyplněná (Things-style). */
+.em-task-status[data-task='/'] {
+  background: linear-gradient(
+    to right,
+    var(--text-muted) 50%,
+    transparent 50%
+  );
+  border-color: var(--text-muted);
+}
+
+/* Canceled [-] — přerušovaný rámeček + minus uvnitř. */
+.em-task-status[data-task='-'] {
+  border-style: dashed;
+}
+.em-task-status[data-task='-']::after {
+  content: '−';
+  font-weight: bold;
+}
+
+/* Forwarded [>] — šipka doprava. */
+.em-task-status[data-task='>']::after {
+  content: '›';
+  font-weight: bold;
+}
+
+/* Scheduling [<] — malá ikona kalendáře. */
+.em-task-status[data-task='<']::after {
+  content: '📅';
+  font-size: 10px;
+}
+
+/* === Markdown nadpisy v textu tasku === */
+.em-task-heading {
+  display: inline;
+}
+.em-task-heading-1 { font-size: 1.35em; font-weight: var(--font-bold); }
+.em-task-heading-2 { font-size: 1.2em;  font-weight: var(--font-bold); }
+.em-task-heading-3 { font-size: 1.1em;  font-weight: var(--font-bold); }
+.em-task-heading-4 { font-weight: var(--font-bold); }
+.em-task-heading-5 { font-weight: var(--font-bold); }
+.em-task-heading-6 { font-weight: var(--font-bold); }

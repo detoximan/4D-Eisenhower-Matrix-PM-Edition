@@ -4,10 +4,12 @@ import {
   buildTaskLine,
   moveLineQuadrant,
   setDueDateOnLine,
+  setStatusOnLine,
   toggleLine,
   transformLineInContent,
   updateLineTextAndTags,
 } from '../src/core/lineOps.ts';
+import { parseTaskLine } from '../src/core/parser.ts';
 
 describe('toggleLine', () => {
   it('unchecked → checked + ✅ today', () => {
@@ -65,6 +67,53 @@ describe('moveLineQuadrant', () => {
   it('removes quadrant when moving to OPEN', () => {
     const r = moveLineQuadrant('- [ ] #DO #Work hello', 'OPEN');
     expect(r.newLine).toBe('- [ ] #Work hello');
+  });
+});
+
+describe('setStatusOnLine', () => {
+  it('sets status to x adds ✅ today', () => {
+    const r = setStatusOnLine('- [ ] #DO hello', 'x', '2026-05-21');
+    expect(r.newLine).toBe('- [x] #DO hello ✅ 2026-05-21');
+  });
+  it('sets status to / and strips existing ✅', () => {
+    const r = setStatusOnLine('- [x] #DO done ✅ 2026-05-10', '/', '2026-05-21');
+    expect(r.newLine).toBe('- [/] #DO done');
+  });
+  it('sets status to - (canceled)', () => {
+    const r = setStatusOnLine('- [ ] #DO nope', '-', '2026-05-21');
+    expect(r.newLine).toBe('- [-] #DO nope');
+  });
+  it('accepts arbitrary single char like >', () => {
+    const r = setStatusOnLine('- [ ] task', '>', '2026-05-21');
+    expect(r.newLine).toBe('- [>] task');
+  });
+  it('throws on multi-char status', () => {
+    expect(() => setStatusOnLine('- [ ] task', 'xx', '2026-05-21')).toThrow(/Invalid status/);
+  });
+});
+
+describe('parseTaskLine — non-standard statuses', () => {
+  it('parses [/] (incomplete) as not checked', () => {
+    const p = parseTaskLine('- [/] #DO doing it', 0);
+    expect(p).not.toBeNull();
+    expect(p!.status).toBe('/');
+    expect(p!.checked).toBe(false);
+    expect(p!.text).toBe('doing it');
+  });
+  it('parses [-] (canceled) with status preserved', () => {
+    const p = parseTaskLine('- [-] #DO scratch', 0);
+    expect(p!.status).toBe('-');
+    expect(p!.checked).toBe(false);
+  });
+  it('parses [>] (forwarded)', () => {
+    const p = parseTaskLine('- [>] later', 0);
+    expect(p!.status).toBe('>');
+    expect(p!.checked).toBe(false);
+  });
+  it('parses [X] (uppercase done) as checked', () => {
+    const p = parseTaskLine('- [X] capital done', 0);
+    expect(p!.status).toBe('X');
+    expect(p!.checked).toBe(true);
   });
 });
 

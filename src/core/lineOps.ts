@@ -7,13 +7,14 @@
 import { parseTaskLine, PRIORITY_EMOJI } from './parser.ts';
 import type { Priority, Quadrant } from './types.ts';
 
-const TASK_LINE_RE = /^(\s*-\s+\[)([ xX])(\].*)$/;
+// Status v hranatých závorkách = jakýkoli znak kromě `]` (viz parser.ts).
+const TASK_LINE_RE = /^(\s*-\s+\[)([^\]])(\].*)$/;
 const DONE_DATE_RE = /\s*✅\s*\d{4}-\d{2}-\d{2}/g;
 const DUE_DATE_STRIP_RE = /\s*📅\s*\d{4}-\d{2}-\d{2}/;
-const LEADING_TAGS_FULL_RE = /^(\s*-\s+\[[ xX]\]\s+(?:#[\p{L}\p{N}_-]+\s+)*)/u;
+const LEADING_TAGS_FULL_RE = /^(\s*-\s+\[[^\]]\]\s+(?:#[\p{L}\p{N}_-]+\s+)*)/u;
 const LEADING_QUADRANT_TAG_RE =
-  /^(\s*-\s+\[[ xX]\]\s+)(#(?:DO|DECIDE|DELEGATE|DELETE))(\s+|$)/i;
-const LEADING_NO_TAG_RE = /^(\s*-\s+\[[ xX]\]\s+)(.*)$/;
+  /^(\s*-\s+\[[^\]]\]\s+)(#(?:DO|DECIDE|DELEGATE|DELETE))(\s+|$)/i;
+const LEADING_NO_TAG_RE = /^(\s*-\s+\[[^\]]\]\s+)(.*)$/;
 const FRONTMATTER_END_RE = /^---\s*$/;
 
 const QUADRANT_TAG_SET = new Set(['#DO', '#DECIDE', '#DELEGATE', '#DELETE']);
@@ -41,6 +42,33 @@ export function toggleLine(line: string, todayISO: string): ToggleResult {
   if (willBeChecked) newLine += ` ✅ ${todayISO}`;
 
   return { previousLine: line, newLine, checked: willBeChecked };
+}
+
+// ============================================================
+// Set arbitrary status char (Basic states: ' ', '/', 'x', '-', '>', '<')
+// ============================================================
+
+/**
+ * Nastaví status (znak v hranatých závorkách) na konkrétní hodnotu.
+ * Pokud nový status = `x`, přidá ✅ today (pokud chyběla). Jinak ✅ odstraní.
+ */
+export function setStatusOnLine(
+  line: string,
+  newStatus: string,
+  todayISO: string,
+): UpdateResult {
+  const m = TASK_LINE_RE.exec(line);
+  if (!m) throw new Error(`Not a task line: "${line}"`);
+  if (newStatus.length !== 1 || newStatus === ']') {
+    throw new Error(`Invalid status: "${newStatus}"`);
+  }
+
+  const isDone = newStatus.toLowerCase() === 'x';
+  let rest = m[3].replace(DONE_DATE_RE, '').replace(/\s+$/, '');
+  let newLine = `${m[1]}${newStatus}${rest}`;
+  if (isDone) newLine += ` ✅ ${todayISO}`;
+
+  return { previousLine: line, newLine };
 }
 
 // ============================================================
@@ -190,7 +218,9 @@ export function updateLineTextAndTags(
     throw new Error(`Invalid dueDate format: "${effectiveDueDate}"`);
   }
 
-  const checkbox = parsed.checked ? 'x' : ' ';
+  // Zachováme původní status (` `, `/`, `x`, `-`, `>`, `<` …) — update se
+  // týká jen textu/tagů/datumů/priority, ne checkbox stavu.
+  const statusChar = parsed.status;
   const quadrantPart = parsed.quadrant === 'OPEN' ? '' : `#${parsed.quadrant} `;
   const tagsPart = normalizedTags.length > 0 ? normalizedTags.join(' ') + ' ' : '';
   const priorityPart = effectivePriority ? `${PRIORITY_EMOJI[effectivePriority]} ` : '';
@@ -202,7 +232,7 @@ export function updateLineTextAndTags(
   const body = `${quadrantPart}${tagsPart}${priorityPart}${duePart}${startPart}${text}${donePart}`
     .replace(/  +/g, ' ')
     .replace(/\s+$/, '');
-  const newLine = `${indent}- [${checkbox}] ${body}`;
+  const newLine = `${indent}- [${statusChar}] ${body}`;
 
   return { previousLine: line, newLine };
 }
@@ -251,7 +281,7 @@ export function appendTaskUnderHeading(
     const l = lines[i];
     if (/^#+\s/.test(l)) break;
     if (/^---\s*$/.test(l)) break;
-    if (/^\s*-\s+\[[ xX]\]/.test(l)) {
+    if (/^\s*-\s+\[[^\]]\]/.test(l)) {
       insertAt = i + 1;
     }
   }

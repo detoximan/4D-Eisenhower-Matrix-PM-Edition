@@ -27,8 +27,9 @@ Vizualizace tasků napříč celým vault-em v **5-polové Eisenhower matici** (
 - **Plné CRUD** — přidání (formulář s text + tagy + due date + priorita), editace, odškrtnutí, přesun mezi kvadranty.
 - **Priorita** podle Obsidian Tasks konvence: 🔺 highest · ⏫ high · 🔼 medium · 🔽 low · ⏬ lowest
 - **Tag autocomplete** — při psaní tagů napovídá existující tagy z vault-u (žádné duplicity)
-- **Markdown formátování** — základní inline Markdown v textu tasku (tučné, kurzíva, kód, přeškrtnuté)
-- **Kompaktní režim** — přepínač v hlavičce zmenší každou kartu na dva řádky (text + priorita/due date)
+- **Markdown formátování** — základní inline Markdown v textu tasku (tučné, kurzíva, kód, přeškrtnuté); úvodní `# ` … `###### ` se vykreslí jako nadpis
+- **6 stavů tasku** — `[ ]` to-do, `[/]` incomplete, `[x]` done, `[-]` canceled, `[>]` forwarded, `[<]` scheduling (Things-style). Pravý klik → *Mark as…*. Toggle „Done" skrývá hotové stavy (`[x]` + `[-]`)
+- **Kompaktní režim** — přepínač v hlavičce zmenší každou kartu na dva řádky textu + priorita/due date
 - **Filtr** podle context tagu (OR logika + virtuální „Ostatní" chip)
 - **Datum navigace** (← / → / kalendář / Dnes) + den-cutoff banner po půlnoci
 - **3 s grace period** po odškrtnutí (zelený rámeček + odpočet — klikni znovu pro vrácení)
@@ -102,6 +103,7 @@ Priorita ([Obsidian Tasks konvence](https://publish.obsidian.md/tasks/Getting+St
 | Sbalit celou hlavičku | ▲ vpravo nahoře (užitečné na mobilu) |
 | Zobrazit hotové tasky | Toggle „Done" v headeru |
 | Kompaktní zobrazení | Přepínač „Compact" v headeru — 2řádkové karty |
+| Změnit stav tasku | Pravý klik na kartu (nebo na status box) → *Mark as…* |
 
 ### Pořadí v kvadrantu
 

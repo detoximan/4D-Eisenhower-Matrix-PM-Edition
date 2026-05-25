@@ -18,7 +18,7 @@ import {
 import type { ObsidianTaskRepo } from '../obsidian-adapter/ObsidianTaskRepo.ts';
 import { showError } from '../obsidian-adapter/toast.ts';
 import type { Priority, Quadrant, Task } from '../core/types.ts';
-import { QUADRANTS } from '../core/types.ts';
+import { QUADRANTS, isClosedStatus } from '../core/types.ts';
 import {
   extractAllContextTags,
   formatDateISO,
@@ -285,6 +285,17 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     [repo],
   );
 
+  const handleSetStatus = useCallback(
+    async (task: Task, newStatus: string) => {
+      try {
+        await repo.setStatus(task.sourceFile, task.lineIndex, newStatus, today);
+      } catch (e) {
+        showError(`Changing status failed: ${String((e as Error).message ?? e)}`);
+      }
+    },
+    [repo, today],
+  );
+
   const handleUpdate = useCallback(
     async (
       task: Task,
@@ -341,7 +352,9 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       tasks.filter((t) => {
         if (!matchesFilter(t, selectedTags)) return false;
         if (showCompleted) return true;
-        if (!t.checked) return true;
+        // "Closed" = done ([x]) i canceled ([-]) — oba schované, pokud
+        // uživatel nezapne přepínač "Done" v hlavičce.
+        if (!isClosedStatus(t.status)) return true;
         return graceMap.has(taskKey(t.sourceFile, t.lineIndex));
       }),
     [tasks, selectedTags, showCompleted, graceMap],
@@ -353,7 +366,10 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   );
 
   const availableTags = useMemo(
-    () => extractAllContextTags(tasks.filter((t) => showCompleted || !t.checked)),
+    () =>
+      extractAllContextTags(
+        tasks.filter((t) => showCompleted || !isClosedStatus(t.status)),
+      ),
     [tasks, showCompleted],
   );
 
@@ -372,7 +388,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   );
 
   const totalUnfiltered = useMemo(
-    () => tasks.filter((t) => showCompleted || !t.checked).length,
+    () => tasks.filter((t) => showCompleted || !isClosedStatus(t.status)).length,
     [tasks, showCompleted],
   );
 
@@ -625,6 +641,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
           }
           onToggleCollapsed={toggleQuadrantCollapsed}
           onToggleTask={handleToggle}
+          onSetStatus={handleSetStatus}
           onSetDueDate={handleSetDueDate}
           onUpdateTask={handleUpdate}
           onAddTask={handleAdd}

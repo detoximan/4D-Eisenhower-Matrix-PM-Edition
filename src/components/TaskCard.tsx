@@ -2,7 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { Menu, Platform, type PaneType } from 'obsidian';
 import type { Priority, Quadrant, Task } from '../core/types.ts';
-import { PRIORITY_META, QUADRANTS, QUADRANT_META } from '../core/types.ts';
+import {
+  PRIORITY_META,
+  QUADRANTS,
+  QUADRANT_META,
+  TASK_STATUSES,
+} from '../core/types.ts';
 import { isOverdue } from '../core/taskUtils.ts';
 import { DueDatePicker } from './DueDatePicker.tsx';
 import { PriorityPicker } from './PriorityPicker.tsx';
@@ -17,6 +22,7 @@ type Props = {
   isActiveDrag: boolean;
   compact: boolean;
   onToggle: () => void;
+  onSetStatus: (newStatus: string) => Promise<void>;
   onSetDueDate: (newDueDate: string | null) => Promise<void>;
   onUpdateTask: (
     text: string,
@@ -35,6 +41,7 @@ export function TaskCard({
   isActiveDrag,
   compact,
   onToggle,
+  onSetStatus,
   onSetDueDate,
   onUpdateTask,
   onOpenSource,
@@ -68,6 +75,22 @@ export function TaskCard({
     menu.addItem((item) =>
       item.setTitle('Edit').setIcon('pencil').onClick(enterEdit),
     );
+    menu.addSeparator();
+    // Status (6 Basic stavů) — aktuální je zatržený.
+    for (const s of TASK_STATUSES) {
+      const isCurrent =
+        s.char === task.status ||
+        (s.char === 'x' && task.status.toLowerCase() === 'x');
+      menu.addItem((item) =>
+        item
+          .setTitle(`Mark as ${s.label}`)
+          .setIcon(s.icon)
+          .setChecked(isCurrent)
+          .onClick(() => {
+            if (!isCurrent) void onSetStatus(s.char);
+          }),
+      );
+    }
     menu.addSeparator();
     menu.addItem((item) =>
       item
@@ -138,15 +161,28 @@ export function TaskCard({
     <em className="em-empty-text">(empty text)</em>
   );
 
+  // Statusový knoflík: kreslí stav přes CSS (data-task=" "/"/"/"x"/"-"/">"/"<"…).
+  // Klik = klasický toggle ([ ] ↔ [x]). Pro ostatní stavy ('/', '>', '<', '-')
+  // slouží kontextové menu „Mark as …". Z neznámého stavu jdeme na [x].
+  const statusForRender = task.status === '' ? ' ' : task.status;
   const checkbox = (
-    <input
-      type="checkbox"
-      checked={task.checked}
-      onChange={onToggle}
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggle();
+      }}
       onPointerDown={(e) => e.stopPropagation()}
       onDoubleClick={(e) => e.stopPropagation()}
-      className="em-task-checkbox"
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        buildMenu().showAtMouseEvent(e.nativeEvent);
+      }}
+      className="em-task-checkbox em-task-status"
+      data-task={statusForRender}
       aria-label={task.checked ? 'Mark as not done (undo)' : 'Mark as done'}
+      title="Click to toggle done · right-click for all states"
     />
   );
 
@@ -179,8 +215,8 @@ export function TaskCard({
       className={`em-task ${overdue ? 'em-task-overdue' : ''} ${
         inGrace ? 'em-task-grace' : ''
       } ${editing ? 'em-task-editing' : ''} ${task.checked && !editing ? 'em-task-checked' : ''} ${
-        isActiveDrag && !Platform.isMobile ? 'em-task-active-drag' : ''
-      }`}
+        task.status === '-' && !editing ? 'em-task-canceled' : ''
+      } ${isActiveDrag && !Platform.isMobile ? 'em-task-active-drag' : ''}`}
       title={
         editing
           ? undefined

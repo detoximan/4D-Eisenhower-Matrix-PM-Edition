@@ -4,6 +4,7 @@ import {
   appendTaskUnderHeading,
   moveLineQuadrant,
   setDueDateOnLine,
+  setStatusOnLine,
   toggleLine,
   transformLineInContent,
   updateLineTextAndTags,
@@ -122,6 +123,22 @@ export class ObsidianTaskRepo {
     const file = this.requireFile(sourceFile);
     await this.app.vault.process(file, (content) =>
       transformLineInContent(content, lineIndex, (line) => toggleLine(line, todayISO).newLine),
+    );
+  }
+
+  async setStatus(
+    sourceFile: string,
+    lineIndex: number,
+    status: string,
+    todayISO: string,
+  ): Promise<void> {
+    const file = this.requireFile(sourceFile);
+    await this.app.vault.process(file, (content) =>
+      transformLineInContent(
+        content,
+        lineIndex,
+        (line) => setStatusOnLine(line, status, todayISO).newLine,
+      ),
     );
   }
 
