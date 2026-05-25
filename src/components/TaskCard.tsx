@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import { Menu, Platform, type PaneType } from 'obsidian';
+import { Menu, Platform, setIcon, type PaneType } from 'obsidian';
 import type { Priority, Quadrant, Task } from '../core/types.ts';
 import {
   PRIORITY_META,
@@ -14,6 +14,19 @@ import { PriorityPicker } from './PriorityPicker.tsx';
 import { renderInlineMarkdown } from './inlineMarkdown.tsx';
 
 export const GRACE_MS = 3000;
+
+/**
+ * Tenký wrapper kolem Obsidian `setIcon` — renderuje Lucide ikonu do
+ * <span> přes effect. Používáme to ve statusovém boxu, aby se ikona
+ * 100% shodovala s ikonou v kontextovém menu (stejný název = stejné SVG).
+ */
+function LucideIcon({ name }: { name: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (ref.current) setIcon(ref.current, name);
+  }, [name]);
+  return <span ref={ref} className="em-task-status-icon" aria-hidden="true" />;
+}
 
 type Props = {
   task: Task;
@@ -165,10 +178,17 @@ export function TaskCard({
     <em className="em-empty-text">(empty text)</em>
   );
 
-  // Statusový knoflík: kreslí stav přes CSS (data-task=" "/"/"/"x"/"-"/">"/"<"…).
-  // Klik = klasický toggle ([ ] ↔ [x]). Pro ostatní stavy ('/', '>', '<', '-')
-  // slouží kontextové menu „Mark as …". Z neznámého stavu jdeme na [x].
+  // Statusový knoflík: ikona je TÁŽ Lucide ikona jako u příslušné položky
+  // v kontextovém menu (TASK_STATUSES.icon) — vykreslíme přes Obsidian
+  // setIcon, ať se v boxu i v menu zobrazuje 100 % stejně. data-task
+  // necháme i pro CSS (např. accent výplň u done).
   const statusForRender = task.status === '' ? ' ' : task.status;
+  const statusMeta = TASK_STATUSES.find(
+    (s) =>
+      s.char === task.status ||
+      (s.char === 'x' && task.status.toLowerCase() === 'x'),
+  );
+  const statusIconName = statusMeta?.icon ?? 'circle';
   const checkbox = (
     <button
       type="button"
@@ -187,7 +207,9 @@ export function TaskCard({
       data-task={statusForRender}
       aria-label={task.checked ? 'Mark as not done (undo)' : 'Mark as done'}
       title="Click to toggle done · right-click for all states"
-    />
+    >
+      <LucideIcon name={statusIconName} />
+    </button>
   );
 
   const priorityBadge = task.priority ? (

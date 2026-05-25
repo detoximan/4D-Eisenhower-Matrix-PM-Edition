@@ -1165,74 +1165,47 @@ button.em-priority {
 }
 
 /* === Status checkbox (6 Basic stavů) ===
-   Vlastní button místo nativního <input type="checkbox"> — zobrazí
-   aktuální stav podle atributu data-task. Klik = klasický toggle
-   ([ ] ↔ [x]); pravý klik / kontextové menu nabídne všechny stavy. */
+   Vlastní button místo nativního <input type="checkbox"> — uvnitř
+   renderujeme Lucide ikonu přes Obsidian `setIcon` (stejné SVG jako
+   u příslušné položky v kontextovém menu, aby si box a menu odpovídaly).
+   Klik = toggle [ ] ↔ [x]; pravý klik / context menu → všechny stavy. */
 .em-task-status {
   width: 18px;
   height: 18px;
   margin-top: 2px;
   flex-shrink: 0;
   padding: 0;
-  border: 1.5px solid var(--text-muted);
+  border: none;
   border-radius: 4px;
   background: transparent;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-monospace);
-  font-size: 13px;
-  line-height: 1;
   color: var(--text-muted);
 }
 
 .em-task-status:hover {
-  border-color: var(--interactive-accent);
+  color: var(--text-normal);
 }
 
-/* Done [x] / [X] — vyplněný accent, čistě bílý fajfka. */
+/* Done [x]/[X] — vyplněný accent, ikona check v --text-on-accent. */
 .em-task-status[data-task='x'],
 .em-task-status[data-task='X'] {
   background: var(--interactive-accent);
-  border-color: var(--interactive-accent);
-}
-.em-task-status[data-task='x']::after,
-.em-task-status[data-task='X']::after {
-  content: '✓';
   color: var(--text-on-accent);
-  font-weight: bold;
 }
 
-/* Incomplete [/] — polovina vyplněná (Things-style). */
-.em-task-status[data-task='/'] {
-  background: linear-gradient(
-    to right,
-    var(--text-muted) 50%,
-    transparent 50%
-  );
-  border-color: var(--text-muted);
+.em-task-status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
 }
 
-/* Canceled [-] — přerušovaný rámeček + minus uvnitř. */
-.em-task-status[data-task='-'] {
-  border-style: dashed;
-}
-.em-task-status[data-task='-']::after {
-  content: '−';
-  font-weight: bold;
-}
-
-/* Forwarded [>] — šipka doprava. */
-.em-task-status[data-task='>']::after {
-  content: '›';
-  font-weight: bold;
-}
-
-/* Scheduling [<] — malá ikona kalendáře. */
-.em-task-status[data-task='<']::after {
-  content: '📅';
-  font-size: 10px;
+.em-task-status-icon .svg-icon {
+  width: 14px;
+  height: 14px;
 }
 
 /* === Markdown nadpisy v textu tasku === */
