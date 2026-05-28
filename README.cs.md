@@ -30,6 +30,7 @@ Vizualizace tasků napříč celým vault-em v **5-polové Eisenhower matici** (
 - **Markdown formátování** — základní inline Markdown v textu tasku (tučné, kurzíva, kód, přeškrtnuté); úvodní `# ` … `###### ` se vykreslí jako nadpis
 - **6 stavů tasku** — `[ ]` to-do, `[/]` incomplete, `[x]` done, `[-]` canceled, `[>]` forwarded, `[<]` scheduling (Things-style). Pravý klik → *Mark as…*. Toggle „Done" skrývá hotové stavy (`[x]` + `[-]`)
 - **Kompaktní režim** — přepínač v hlavičce zmenší každou kartu na dva řádky textu + priorita/due date
+- **Kanban zobrazení (desktop)** — přepínač u každého kvadrantu: rozbalí ho na celou šířku se sloupci To-do / In progress / Scheduled / Done. Drag karet mezi sloupci mění stav, drag na jiný kvadrant ho přesune.
 - **Filtr** podle context tagu (OR logika + virtuální „Ostatní" chip)
 - **Datum navigace** (← / → / kalendář / Dnes) + den-cutoff banner po půlnoci
 - **3 s grace period** po odškrtnutí (zelený rámeček + odpočet — klikni znovu pro vrácení)
@@ -104,6 +105,7 @@ Priorita ([Obsidian Tasks konvence](https://publish.obsidian.md/tasks/Getting+St
 | Zobrazit hotové tasky | Toggle „Done" v headeru |
 | Kompaktní zobrazení | Přepínač „Compact" v headeru — 2řádkové karty |
 | Změnit stav tasku | Pravý klik na kartu (nebo na status box) → *Mark as…* |
+| Kanban zobrazení (desktop) | Klik na kanban ikonu v hlavičce kvadrantu → status sloupce; další klik zpět na mřížku |
 
 ### Pořadí v kvadrantu
 

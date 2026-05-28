@@ -142,6 +142,26 @@ export class ObsidianTaskRepo {
     );
   }
 
+  /**
+   * Kanban drop ze spodního kvadrantu do status-sloupce: změní zároveň
+   * kvadrant (#tag) i status (checkbox) v jednom zápisu.
+   */
+  async moveAndSetStatus(
+    sourceFile: string,
+    lineIndex: number,
+    newQuadrant: Quadrant,
+    status: string,
+    todayISO: string,
+  ): Promise<void> {
+    const file = this.requireFile(sourceFile);
+    await this.app.vault.process(file, (content) =>
+      transformLineInContent(content, lineIndex, (line) => {
+        const moved = moveLineQuadrant(line, newQuadrant).newLine;
+        return setStatusOnLine(moved, status, todayISO).newLine;
+      }),
+    );
+  }
+
   async moveTask(
     sourceFile: string,
     lineIndex: number,

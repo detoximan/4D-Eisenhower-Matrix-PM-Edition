@@ -34,6 +34,12 @@ export type PluginSettings = {
    * skryjí, editace zůstává plná. Přepíná se v hlavičce. Persistované.
    */
   compactMode: boolean;
+  /**
+   * Kanban režim (jen desktop): pokud je nastaven kvadrant, ten se rozbalí
+   * na celou šířku se 4 status-sloupci (To-do / In progress / Scheduled /
+   * Done) a zbylé kvadranty jsou pod ním. `null` = normální 5-mřížka.
+   */
+  kanbanQuadrant: Quadrant | null;
 };
 
 export const DEFAULT_SETTINGS: PluginSettings = {
@@ -54,4 +60,5 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   dailySectionHeading: '# Dnes',
   headerCollapsed: false,
   compactMode: false,
+  kanbanQuadrant: null,
 };

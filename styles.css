@@ -1230,3 +1230,101 @@ button.em-priority {
 .em-task-heading-4 { font-weight: var(--font-bold); }
 .em-task-heading-5 { font-weight: var(--font-bold); }
 .em-task-heading-6 { font-weight: var(--font-bold); }
+
+/* === Kanban view (desktop) ===
+   Zvolený kvadrant na celou šířku se 4 status-sloupci, pod ním zbylé
+   4 kvadranty. Přepíná se ikonou v hlavičce kvadrantu. */
+.em-kanban-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: var(--radius-s);
+}
+.em-kanban-btn:hover {
+  color: var(--text-normal);
+  background: var(--background-modifier-hover);
+}
+.em-kanban-btn-active {
+  color: var(--interactive-accent);
+}
+.em-kanban-icon {
+  display: inline-flex;
+}
+.em-kanban-icon .svg-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.em-kanban {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+}
+
+/* Status-sloupce v rozbaleném kvadrantu */
+.em-kanban-columns {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--size-2-2);
+  padding: 0 var(--size-4-2) var(--size-4-2);
+}
+
+@media (max-width: 900px) {
+  .em-kanban-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.em-kanban-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-1);
+  min-width: 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  background: var(--background-primary);
+  padding: var(--size-2-1);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.em-kanban-col-over {
+  border-color: var(--interactive-accent);
+  background: var(--background-modifier-hover);
+}
+.em-kanban-col-header {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2-1);
+  padding: 2px 4px;
+  font-size: var(--font-ui-small);
+  font-weight: var(--font-medium);
+  color: var(--text-muted);
+  position: sticky;
+  top: 0;
+  background: inherit;
+}
+.em-kanban-col-header .svg-icon {
+  width: 14px;
+  height: 14px;
+}
+.em-kanban-col-label {
+  flex: 1;
+}
+
+/* Spodní řada zbylých kvadrantů */
+.em-kanban-bottom {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--size-4-2);
+}
+
+@media (max-width: 900px) {
+  .em-kanban-bottom {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

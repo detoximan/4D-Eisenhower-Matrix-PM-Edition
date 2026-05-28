@@ -30,6 +30,7 @@ Visualize tasks across your entire vault in a **5-quadrant Eisenhower matrix** (
 - **Markdown formatting** — basic inline Markdown in task text (bold, italic, code, strikethrough); a leading `# ` … `###### ` prefix renders as a heading.
 - **6 task statuses** — Things-style `[ ]` to-do, `[/]` incomplete, `[x]` done, `[-]` canceled, `[>]` forwarded, `[<]` scheduling. Set via right-click → *Mark as…*. The "Done" toggle hides finished states (`[x]` + `[-]`).
 - **Compact mode** — a header toggle that shrinks every card to two lines of text + priority/due date.
+- **Kanban view (desktop)** — a per-quadrant toggle: expand any quadrant to full width with To-do / In progress / Scheduled / Done status columns. Drag cards between columns to change status, or onto another quadrant to move them.
 - **Filter** by context tag (OR logic + a virtual "Other" chip).
 - **Date navigation** (← / → / calendar / Today) + a day-cutoff banner after midnight.
 - **3 s grace period** after checking a task off (green border + countdown — click again to undo).
@@ -104,6 +105,7 @@ Priority ([Obsidian Tasks convention](https://publish.obsidian.md/tasks/Getting+
 | Show completed tasks | The "Done" toggle in the header |
 | Compact view | The "Compact" toggle in the header — 2-line cards |
 | Set task status | Right-click the card (or the status box) → *Mark as…* |
+| Kanban view (desktop) | Click the kanban icon in a quadrant header → status columns; click it again to return to the grid |
 
 ### In-quadrant order
 

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import type { PaneType } from 'obsidian';
+import { Platform, type PaneType } from 'obsidian';
 import type { Priority, Quadrant as QuadrantKind, Task } from '../core/types.ts';
 import { QUADRANT_META } from '../core/types.ts';
 import { TaskCard } from './TaskCard.tsx';
 import { AddTaskInput } from './AddTaskInput.tsx';
+import { Icon } from './Icon.tsx';
 
 type Props = {
   kind: QuadrantKind;
@@ -13,6 +14,8 @@ type Props = {
   collapsed: boolean;
   activeTaskId: string | null;
   compact: boolean;
+  kanbanActive: boolean;
+  onToggleKanban: () => void;
   onToggleCollapsed: () => void;
   graceMap: Map<string, number>;
   onToggleTask: (task: Task) => void;
@@ -42,6 +45,8 @@ export function Quadrant({
   collapsed,
   activeTaskId,
   compact,
+  kanbanActive,
+  onToggleKanban,
   onToggleCollapsed,
   graceMap,
   onToggleTask,
@@ -96,6 +101,17 @@ export function Quadrant({
           >
             +
           </button>
+          {!Platform.isMobile && (
+            <button
+              type="button"
+              onClick={onToggleKanban}
+              className={`em-kanban-btn ${kanbanActive ? 'em-kanban-btn-active' : ''}`}
+              title={kanbanActive ? 'Back to grid' : 'Kanban view (status columns)'}
+              aria-label={kanbanActive ? 'Back to grid' : 'Kanban view'}
+            >
+              <Icon name="square-kanban" className="em-kanban-icon" />
+            </button>
+          )}
           <span className="em-quadrant-count">{tasks.length}</span>
         </div>
       </header>

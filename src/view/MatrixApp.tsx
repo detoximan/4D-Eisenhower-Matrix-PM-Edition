@@ -27,6 +27,7 @@ import {
   UNTAGGED_FILTER,
 } from '../core/taskUtils.ts';
 import { Matrix } from '../components/Matrix.tsx';
+import { KanbanView } from '../components/KanbanView.tsx';
 import { FilterBar } from '../components/FilterBar.tsx';
 import { DateNav } from '../components/DateNav.tsx';
 import { TaskCardOverlay, GRACE_MS } from '../components/TaskCard.tsx';
@@ -119,6 +120,9 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     plugin.settings.headerCollapsed,
   );
   const [compactMode, setCompactMode] = useState<boolean>(plugin.settings.compactMode);
+  const [kanbanQuadrant, setKanbanQuadrant] = useState<Quadrant | null>(
+    plugin.settings.kanbanQuadrant,
+  );
   const [dayChangedBanner, setDayChangedBanner] = useState<string | null>(() => {
     const last = plugin.settings.lastOpenedDate;
     return last && last !== today ? last : null;
@@ -160,6 +164,11 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     plugin.settings.compactMode = compactMode;
     void plugin.saveSettings();
   }, [compactMode, plugin]);
+
+  useEffect(() => {
+    plugin.settings.kanbanQuadrant = kanbanQuadrant;
+    void plugin.saveSettings();
+  }, [kanbanQuadrant, plugin]);
 
   // === Data fetching ===
   const refetchTimerRef = useRef<number | null>(null);
@@ -433,6 +442,12 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     );
   }, []);
 
+  // Kanban: klik na ikonu zvoleného kvadrantu vypne (zpět na mřížku),
+  // klik na jiný kvadrant prohodí fokus.
+  const toggleKanban = useCallback((q: Quadrant) => {
+    setKanbanQuadrant((prev) => (prev === q ? null : q));
+  }, []);
+
   const acknowledgeDayChange = useCallback(
     (jumpToToday: boolean) => {
       if (jumpToToday) setDate(today);
@@ -487,6 +502,35 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     [repo],
   );
 
+  // Kanban drop ze spodního kvadrantu do status-sloupce: kvadrant + status najednou.
+  const handleMoveAndSetStatus = useCallback(
+    async (task: Task, targetQuadrant: Quadrant, newStatus: string) => {
+      const id = taskKey(task.sourceFile, task.lineIndex);
+      applyLocalStatus(task.sourceFile, task.lineIndex, newStatus);
+      setTasks((prev) =>
+        prev.map((t) =>
+          taskKey(t.sourceFile, t.lineIndex) === id ? { ...t, quadrant: targetQuadrant } : t,
+        ),
+      );
+      try {
+        await repo.moveAndSetStatus(
+          task.sourceFile,
+          task.lineIndex,
+          targetQuadrant,
+          newStatus,
+          today,
+        );
+      } catch (err) {
+        applyLocalStatus(task.sourceFile, task.lineIndex, task.status);
+        setTasks((prev) =>
+          prev.map((t) => (taskKey(t.sourceFile, t.lineIndex) === id ? task : t)),
+        );
+        showError(`Move failed: ${String((err as Error).message ?? err)}`);
+      }
+    },
+    [repo, today, applyLocalStatus],
+  );
+
   const onDragEnd = useCallback(
     async (e: DragEndEvent) => {
       setActiveTask(null);
@@ -499,15 +543,27 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       const dragged = tasks.find((t) => taskKey(t.sourceFile, t.lineIndex) === draggedId);
       if (!dragged) return;
 
-      // overId je vždy Quadrant kind (karty nejsou drop targety — useDraggable only)
-      if (!QUADRANTS.includes(overId as Quadrant)) return;
+      // Kanban status-sloupec → změna checkboxu (+ případně kvadrantu).
+      if (overId.startsWith('kanban-status:')) {
+        const statusChar = overId.slice('kanban-status:'.length);
+        if (kanbanQuadrant && dragged.quadrant !== kanbanQuadrant) {
+          await handleMoveAndSetStatus(dragged, kanbanQuadrant, statusChar);
+        } else if (dragged.status !== statusChar) {
+          await handleSetStatus(dragged, statusChar);
+        }
+        return;
+      }
 
-      await handleMove(dragged, overId as Quadrant);
+      // Jinak je overId Quadrant kind → změna kvadrantu (jako dosud).
+      if (QUADRANTS.includes(overId as Quadrant)) {
+        await handleMove(dragged, overId as Quadrant);
+      }
     },
-    [tasks, handleMove],
+    [tasks, handleMove, handleSetStatus, handleMoveAndSetStatus, kanbanQuadrant],
   );
 
   const isPastOrFuture = date !== today;
+  const effectiveKanban = Platform.isMobile ? null : kanbanQuadrant;
 
   // Ovládání zobrazení (Collapse all / Done / Compact) — sdílené mezi
   // rozbalenou i sbalenou hlavičkou, ať jsou ty přepínače dostupné i
@@ -654,25 +710,51 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         )}
 
         <div className="em-app-body">
-        <Matrix
-          tasks={sortedVisibleTasks}
-          today={today}
-          collapsed={collapsed}
-          graceMap={graceMap}
-          compact={compactMode}
-          activeTaskId={
-            activeTask ? taskKey(activeTask.sourceFile, activeTask.lineIndex) : null
-          }
-          onToggleCollapsed={toggleQuadrantCollapsed}
-          onToggleTask={handleToggle}
-          onSetStatus={handleSetStatus}
-          onSetDueDate={handleSetDueDate}
-          onUpdateTask={handleUpdate}
-          onAddTask={handleAdd}
-          onOpenSource={handleOpenSource}
-          onMoveQuadrant={handleMove}
-          createTagSuggest={createTagSuggest}
-        />
+        {effectiveKanban ? (
+          <KanbanView
+            kanbanQuadrant={effectiveKanban}
+            tasks={sortedVisibleTasks}
+            today={today}
+            collapsed={collapsed}
+            graceMap={graceMap}
+            compact={compactMode}
+            activeTaskId={
+              activeTask ? taskKey(activeTask.sourceFile, activeTask.lineIndex) : null
+            }
+            onToggleKanban={toggleKanban}
+            onToggleCollapsed={toggleQuadrantCollapsed}
+            onToggleTask={handleToggle}
+            onSetStatus={handleSetStatus}
+            onSetDueDate={handleSetDueDate}
+            onUpdateTask={handleUpdate}
+            onAddTask={handleAdd}
+            onOpenSource={handleOpenSource}
+            onMoveQuadrant={handleMove}
+            createTagSuggest={createTagSuggest}
+          />
+        ) : (
+          <Matrix
+            tasks={sortedVisibleTasks}
+            today={today}
+            collapsed={collapsed}
+            graceMap={graceMap}
+            compact={compactMode}
+            activeTaskId={
+              activeTask ? taskKey(activeTask.sourceFile, activeTask.lineIndex) : null
+            }
+            kanbanQuadrant={effectiveKanban}
+            onToggleKanban={toggleKanban}
+            onToggleCollapsed={toggleQuadrantCollapsed}
+            onToggleTask={handleToggle}
+            onSetStatus={handleSetStatus}
+            onSetDueDate={handleSetDueDate}
+            onUpdateTask={handleUpdate}
+            onAddTask={handleAdd}
+            onOpenSource={handleOpenSource}
+            onMoveQuadrant={handleMove}
+            createTagSuggest={createTagSuggest}
+          />
+        )}
         </div>
       </div>
       {/* DragOverlay jen na desktopu — na mobilu se posouvá originální karta

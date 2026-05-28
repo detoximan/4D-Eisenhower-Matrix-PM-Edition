@@ -11,6 +11,8 @@ type Props = {
   graceMap: Map<string, number>;
   activeTaskId: string | null;
   compact: boolean;
+  kanbanQuadrant: QuadrantKind | null;
+  onToggleKanban: (q: QuadrantKind) => void;
   onToggleCollapsed: (q: QuadrantKind) => void;
   onToggleTask: (task: Task) => void;
   onSetStatus: (task: Task, newStatus: string) => Promise<void>;
@@ -57,6 +59,8 @@ export function Matrix(props: Props) {
       graceMap={props.graceMap}
       activeTaskId={props.activeTaskId}
       compact={props.compact}
+      kanbanActive={props.kanbanQuadrant === q}
+      onToggleKanban={() => props.onToggleKanban(q)}
       onToggleCollapsed={() => props.onToggleCollapsed(q)}
       onToggleTask={props.onToggleTask}
       onSetStatus={props.onSetStatus}
