@@ -509,6 +509,37 @@ export function MatrixApp({ app, repo, plugin }: Props) {
 
   const isPastOrFuture = date !== today;
 
+  // Ovládání zobrazení (Collapse all / Done / Compact) — sdílené mezi
+  // rozbalenou i sbalenou hlavičkou, ať jsou ty přepínače dostupné i
+  // když je hlavička sbalená (uživatel je chce mít po ruce vždy).
+  const viewControls = (
+    <>
+      <button
+        type="button"
+        onClick={anyCollapsed ? expandAll : collapseAll}
+        className="em-btn-link"
+      >
+        {anyCollapsed ? 'Expand all' : 'Collapse all'}
+      </button>
+      <label className="em-toggle">
+        <input
+          type="checkbox"
+          checked={showCompleted}
+          onChange={(e) => setShowCompleted(e.target.checked)}
+        />
+        <span>Done</span>
+      </label>
+      <label className="em-toggle" title="Compact 2-line task cards">
+        <input
+          type="checkbox"
+          checked={compactMode}
+          onChange={(e) => setCompactMode(e.target.checked)}
+        />
+        <span>Compact</span>
+      </label>
+    </>
+  );
+
   return (
     <DndContext
       sensors={sensors}
@@ -522,15 +553,18 @@ export function MatrixApp({ app, repo, plugin }: Props) {
             <span className="em-compact-info">
               ⚡ Eisenhower Matrix · {tasks.length} tasks
             </span>
-            <button
-              type="button"
-              onClick={() => setHeaderCollapsed(false)}
-              className="em-header-collapse-btn"
-              title="Expand header"
-              aria-label="Expand header"
-            >
-              ▼
-            </button>
+            <div className="em-header-right">
+              {viewControls}
+              <button
+                type="button"
+                onClick={() => setHeaderCollapsed(false)}
+                className="em-header-collapse-btn"
+                title="Expand header"
+                aria-label="Expand header"
+              >
+                ▼
+              </button>
+            </div>
           </div>
         ) : (
         <div className="em-app-header">
@@ -545,29 +579,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
             />
           </div>
           <div className="em-header-right">
-            <button
-              type="button"
-              onClick={anyCollapsed ? expandAll : collapseAll}
-              className="em-btn-link"
-            >
-              {anyCollapsed ? 'Expand all' : 'Collapse all'}
-            </button>
-            <label className="em-toggle">
-              <input
-                type="checkbox"
-                checked={showCompleted}
-                onChange={(e) => setShowCompleted(e.target.checked)}
-              />
-              <span>Done</span>
-            </label>
-            <label className="em-toggle" title="Compact 2-line task cards">
-              <input
-                type="checkbox"
-                checked={compactMode}
-                onChange={(e) => setCompactMode(e.target.checked)}
-              />
-              <span>Compact</span>
-            </label>
+            {viewControls}
             <button
               type="button"
               onClick={() => setHeaderCollapsed(true)}

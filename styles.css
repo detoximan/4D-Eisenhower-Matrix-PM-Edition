@@ -94,6 +94,18 @@
   text-overflow: ellipsis;
 }
 
+/* Sbalená hlavička: info se zkrátí (…), ovládání (Collapse all/Done/
+   Compact + ▼) si drží místo a nezalomí se. */
+.em-app-header-compact .em-compact-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.em-app-header-compact .em-header-right {
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+}
+
 .em-header-collapse-btn {
   background: none;
   border: 1px solid transparent;

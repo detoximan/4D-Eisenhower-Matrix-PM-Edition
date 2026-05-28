@@ -43,7 +43,7 @@ export const TASK_STATUSES: {
   // odpovídají Things theme. canceled / forwarded / scheduling jsou
   // záměrně bez rámečku (jen dash / triangle / calendar) — taky Things.
   { char: ' ', label: 'To-do', icon: 'square' },
-  { char: '/', label: 'Incomplete', icon: 'square-dot' },
+  { char: '/', label: 'In progress', icon: 'em-square-half' },
   { char: 'x', label: 'Done', icon: 'square-check-big', closed: true },
   { char: '-', label: 'Canceled', icon: 'minus', closed: true },
   { char: '>', label: 'Forwarded', icon: 'play' },

@@ -1,7 +1,12 @@
-import { Plugin, WorkspaceLeaf } from 'obsidian';
+import { addIcon, Plugin, WorkspaceLeaf } from 'obsidian';
 import { MatrixView, VIEW_TYPE_MATRIX } from './src/view/MatrixView.ts';
 import { DEFAULT_SETTINGS, type PluginSettings } from './src/settings/settings.ts';
 import { MatrixSettingsTab } from './src/settings/SettingsTab.ts';
+
+// Vlastní ikona pro stav "In progress" [/] — Lucide nemá half-square,
+// tak ji zaregistrujeme: hranatý rámeček + vyplněná levá polovina (Things-style).
+// addIcon očekává obsah SVG s viewBoxem 0 0 100 100.
+const SQUARE_HALF_ICON = `<rect x="14" y="14" width="72" height="72" rx="12" fill="none" stroke="currentColor" stroke-width="8"/><path d="M50 18 L24 18 A6 6 0 0 0 18 24 L18 76 A6 6 0 0 0 24 82 L50 82 Z" fill="currentColor"/>`;
 
 export default class EisenhowerMatrixPlugin extends Plugin {
   settings: PluginSettings = DEFAULT_SETTINGS;
@@ -14,6 +19,8 @@ export default class EisenhowerMatrixPlugin extends Plugin {
 
   async onload(): Promise<void> {
     await this.loadSettings();
+
+    addIcon('em-square-half', SQUARE_HALF_ICON);
 
     this.registerView(VIEW_TYPE_MATRIX, (leaf) => new MatrixView(leaf, this));
 
