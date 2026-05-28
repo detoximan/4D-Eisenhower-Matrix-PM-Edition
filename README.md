@@ -6,17 +6,16 @@ Visualize tasks across your entire vault in a **5-quadrant Eisenhower matrix** (
 
 > A morning dashboard for deciding *what to do now*: open it, see tasks split by priority, check off the done ones, add new ones. Markdown files stay the source of truth — the plugin is just a visual layer on top.
 
-> **Note:** the screenshots below were taken before the UI was localized — they still show Czech labels. The plugin UI is now in English.
-
 <table>
   <tr>
     <td><img src="docs/Light.png" alt="Light theme" /></td>
     <td><img src="docs/Dark.png" alt="Dark theme" /></td>
   </tr>
   <tr>
-    <td colspan="2" align="center">
-      <img src="docs/Mobil.jpg" alt="Mobile" width="320" />
-    </td>
+    <td colspan="2" align="center"><img src="docs/Dark_Kanban.png" alt="Kanban view — status columns" /></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><img src="docs/Mobile.png" alt="Mobile" width="320" /></td>
   </tr>
 </table>
 

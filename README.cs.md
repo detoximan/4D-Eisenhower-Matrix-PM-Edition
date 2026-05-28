@@ -6,17 +6,16 @@ Vizualizace tasků napříč celým vault-em v **5-polové Eisenhower matici** (
 
 > Ranní dashboard pro rozhodnutí *co dělat teď*: ráno otevřu, vidím tasky rozdělené podle priority, odškrtnu hotové, případně přidám nové. Source-of-truth zůstávají MD soubory, plugin je jen vizuální vrstva nad nimi.
 
-> **Pozn.:** screenshoty níže jsou pořízené před lokalizací UI — pořád ukazují české popisky. UI pluginu je teď anglicky.
-
 <table>
   <tr>
     <td><img src="docs/Light.png" alt="Light theme" /></td>
     <td><img src="docs/Dark.png" alt="Dark theme" /></td>
   </tr>
   <tr>
-    <td colspan="2" align="center">
-      <img src="docs/Mobil.jpg" alt="Mobile" width="320" />
-    </td>
+    <td colspan="2" align="center"><img src="docs/Dark_Kanban.png" alt="Kanban zobrazení — status sloupce" /></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><img src="docs/Mobile.png" alt="Mobile" width="320" /></td>
   </tr>
 </table>
 
