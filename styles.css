@@ -104,6 +104,7 @@
 .em-app-header-compact .em-header-right {
   flex-shrink: 0;
   flex-wrap: nowrap;
+  gap: var(--size-2-2);
 }
 
 .em-header-collapse-btn {
@@ -1251,6 +1252,21 @@ button.em-priority {
 }
 .em-kanban-btn-active {
   color: var(--interactive-accent);
+}
+/* Tlačítko „Back" v rozbaleném (hlavním) kvadrantu — accent pill + štítek
+   + mřížková ikona, ať je jasné, že vrací do 4D zobrazení. */
+.em-kanban-back {
+  width: auto;
+  gap: 4px;
+  padding: 2px 8px;
+  color: var(--text-on-accent);
+  background: var(--interactive-accent);
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-medium);
+}
+.em-kanban-back:hover {
+  color: var(--text-on-accent);
+  background: var(--interactive-accent-hover);
 }
 .em-kanban-icon {
   display: inline-flex;

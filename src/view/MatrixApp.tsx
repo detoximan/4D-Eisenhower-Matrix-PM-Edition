@@ -606,9 +606,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       <div className="em-app">
         {headerCollapsed ? (
           <div className="em-app-header em-app-header-compact">
-            <span className="em-compact-info">
-              ⚡ Eisenhower Matrix · {tasks.length} tasks
-            </span>
+            <span className="em-compact-info">⚡ {tasks.length} tasks</span>
             <div className="em-header-right">
               {viewControls}
               <button

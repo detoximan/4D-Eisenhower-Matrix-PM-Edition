@@ -109,12 +109,13 @@ export function KanbanView(props: Props) {
             <span className="em-quadrant-count">{expandedTasks.length}</span>
             <button
               type="button"
-              className="em-kanban-btn em-kanban-btn-active"
+              className="em-kanban-btn em-kanban-back"
               onClick={() => props.onToggleKanban(kanbanQuadrant)}
-              title="Back to grid"
-              aria-label="Back to grid"
+              title="Back to 4D grid"
+              aria-label="Back to 4D grid"
             >
-              <Icon name="square-kanban" className="em-kanban-icon" />
+              <Icon name="layout-grid" className="em-kanban-icon" />
+              <span>Back</span>
             </button>
           </div>
         </header>
