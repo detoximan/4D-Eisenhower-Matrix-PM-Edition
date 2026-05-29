@@ -190,15 +190,19 @@ function KanbanColumn({
       <header className="em-kanban-col-header">
         <Icon name={col.icon} className="em-kanban-icon" />
         <span className="em-kanban-col-label">{col.label}</span>
-        <button
-          type="button"
-          onClick={() => setAdding(true)}
-          className="em-quadrant-add"
-          title={`Add task (${col.label})`}
-          aria-label={`Add task to ${col.label}`}
-        >
-          +
-        </button>
+        {/* Done sloupec nemá „+" — task by se založil rovnou zavřený a hned by
+            zmizel (grace + Done filtr), což je matoucí. */}
+        {col.key !== 'done' && (
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            className="em-quadrant-add"
+            title={`Add task (${col.label})`}
+            aria-label={`Add task to ${col.label}`}
+          >
+            +
+          </button>
+        )}
         <span className="em-quadrant-count">{tasks.length}</span>
       </header>
       {adding && (
