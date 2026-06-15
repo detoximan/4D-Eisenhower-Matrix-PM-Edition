@@ -39,7 +39,7 @@ export function AddTaskInput({ quadrant, status, onSubmit, onCancel, createTagSu
   // Attach tag autocomplete na tags input — jen na mount.
   useEffect(() => {
     if (tagsRef.current) createTagSuggest(tagsRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: attach tag autocomplete once
   }, []);
 
   useEffect(() => {

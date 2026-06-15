@@ -148,10 +148,12 @@ Missing something? [Open an issue](https://github.com/krcaljaroslav/4D-eisenhowe
 
 ## Changelog
 
-**1.0.19** — Refined the due-filter chips: the selected one now stands out clearly (orange fill + border) while the unselected one is distinguished by orange text only.
+**1.0.20** — Store-compliance fixes flagged by Obsidian's automated review: raised `minAppVersion` to 1.8.0 (the plugin uses newer vault/workspace APIs), documented the two `eslint-disable` directives, and made `onunload` synchronous. No user-facing changes.
 
 <details>
 <summary>Earlier versions</summary>
+
+- **1.0.19** — Refined the due-filter chips: the selected one now stands out clearly (orange fill + border) while the unselected one is distinguished by orange text only.
 
 - **1.0.18** — Due-date quick filters: **Today** (overdue + due today) and **This week** (overdue + next 7 days) buttons at the start of the filter bar, set apart in orange.
 - **1.0.13–1.0.17** — Kanban view (desktop): per-quadrant toggle into To-do / In progress / Scheduled / Done status columns, drag to change status or move quadrant, add tasks per column, "Back to grid" button.

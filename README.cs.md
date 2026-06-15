@@ -148,10 +148,12 @@ Něco postrádáš? [Issue na GitHubu](https://github.com/krcaljaroslav/4D-eisen
 
 ## Changelog
 
-**1.0.19** — Doladěný design due-filter tlačítek: vybrané teď jasně vyniká (oranžová výplň + ohraničení), nevybrané se odlišuje jen oranžovým textem.
+**1.0.20** — Opravy kvůli automatické kontrole Obsidian store: zvýšen `minAppVersion` na 1.8.0 (plugin používá novější vault/workspace API), doplněny popisky ke dvěma `eslint-disable` direktivám, `onunload` převeden na synchronní. Bez dopadu na uživatele.
 
 <details>
 <summary>Starší verze</summary>
+
+- **1.0.19** — Doladěný design due-filter tlačítek: vybrané teď jasně vyniká (oranžová výplň + ohraničení), nevybrané se odlišuje jen oranžovým textem.
 
 - **1.0.18** — Rychlé filtry podle due date: tlačítka **Today** (overdue + due dnes) a **This week** (overdue + 7 dní) na začátku filter baru, opticky odlišená oranžovou.
 - **1.0.13–1.0.17** — Kanban zobrazení (desktop): přepnutí kvadrantu do sloupců To-do / In progress / Scheduled / Done, drag pro změnu stavu i přesun kvadrantu, přidávání tasků po sloupcích, tlačítko „Back to grid".

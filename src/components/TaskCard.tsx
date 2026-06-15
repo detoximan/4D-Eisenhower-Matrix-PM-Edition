@@ -336,7 +336,7 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
       el.select();
     }
     if (tagsRef.current) createTagSuggest(tagsRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: focus + attach autocomplete once
   }, []);
 
   const save = async () => {

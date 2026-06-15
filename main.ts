@@ -39,7 +39,7 @@ export default class EisenhowerMatrixPlugin extends Plugin {
     this.addSettingTab(new MatrixSettingsTab(this.app, this));
   }
 
-  async onunload(): Promise<void> {
+  onunload(): void {
     // Obsidian uvolní view / ribbon / command / settings tab automaticky.
   }
 
@@ -74,13 +74,13 @@ export default class EisenhowerMatrixPlugin extends Plugin {
 
     const existing = workspace.getLeavesOfType(VIEW_TYPE_MATRIX);
     if (existing.length > 0) {
-      workspace.revealLeaf(existing[0]);
+      void workspace.revealLeaf(existing[0]);
       return;
     }
 
     const leaf: WorkspaceLeaf | null = workspace.getLeaf('tab');
     if (!leaf) return;
     await leaf.setViewState({ type: VIEW_TYPE_MATRIX, active: true });
-    workspace.revealLeaf(leaf);
+    void workspace.revealLeaf(leaf);
   }
 }
