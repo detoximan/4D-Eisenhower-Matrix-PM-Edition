@@ -148,10 +148,12 @@ Něco postrádáš? [Issue na GitHubu](https://github.com/krcaljaroslav/4D-eisen
 
 ## Changelog
 
-**1.0.20** — Opravy kvůli automatické kontrole Obsidian store: zvýšen `minAppVersion` na 1.8.0 (plugin používá novější vault/workspace API), doplněny popisky ke dvěma `eslint-disable` direktivám, `onunload` převeden na synchronní. Bez dopadu na uživatele.
+**1.0.21** — Úklid lintu pro store review: async handlery obaleny `void`, přepnuto na `activeDocument` / `activeWindow` kvůli popout oknům, odstraněna nadbytečná type assertion, popsán zbývající direktivní komentář. Bez dopadu na uživatele. (Tři deprecation *recommendations* nechány — náhrady nejsou dostupné při `minAppVersion` 1.8.0.)
 
 <details>
 <summary>Starší verze</summary>
+
+- **1.0.20** — Opravy kvůli automatické kontrole Obsidian store: zvýšen `minAppVersion` na 1.8.0, doplněny popisky ke dvěma `eslint-disable` direktivám, `onunload` převeden na synchronní.
 
 - **1.0.19** — Doladěný design due-filter tlačítek: vybrané teď jasně vyniká (oranžová výplň + ohraničení), nevybrané se odlišuje jen oranžovým textem.
 

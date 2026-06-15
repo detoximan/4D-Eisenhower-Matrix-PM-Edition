@@ -77,9 +77,11 @@ export function TaskCard({
   // Grace platí pro libovolný „closed" stav ([x] i [-]) — applyLocalStatus
   // přidává klíč do graceMap jen pro tyhle stavy, takže existence
   // graceExpiresAt > now implikuje, že má smysl ukázat zelený pruh + undo.
-  const inGrace = graceExpiresAt !== undefined && graceExpiresAt > now;
-  const graceRemaining = inGrace ? Math.max(0, graceExpiresAt! - now) : 0;
-  const gracePct = inGrace ? (graceRemaining / GRACE_MS) * 100 : 0;
+  // (Podmínka narovno testuje graceExpiresAt → TS ho zúží, není třeba `!`.)
+  const graceRemaining =
+    graceExpiresAt !== undefined && graceExpiresAt > now ? graceExpiresAt - now : 0;
+  const inGrace = graceRemaining > 0;
+  const gracePct = (graceRemaining / GRACE_MS) * 100;
 
   const enterEdit = () => {
     if (editing) return;
@@ -462,7 +464,7 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
           </button>
           <button
             type="button"
-            onClick={save}
+            onClick={() => void save()}
             disabled={pending || !text.trim()}
             className="em-btn-primary-accent"
           >

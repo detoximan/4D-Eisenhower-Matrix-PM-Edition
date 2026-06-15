@@ -148,10 +148,12 @@ Missing something? [Open an issue](https://github.com/krcaljaroslav/4D-eisenhowe
 
 ## Changelog
 
-**1.0.20** — Store-compliance fixes flagged by Obsidian's automated review: raised `minAppVersion` to 1.8.0 (the plugin uses newer vault/workspace APIs), documented the two `eslint-disable` directives, and made `onunload` synchronous. No user-facing changes.
+**1.0.21** — Lint cleanup for the store review: void-wrapped the async event handlers, switched to `activeDocument` / `activeWindow` for popout-window compatibility, removed a redundant type assertion, and described the remaining directive comment. No user-facing changes. (Three deprecation *recommendations* are left as-is — their replacements aren't available at `minAppVersion` 1.8.0.)
 
 <details>
 <summary>Earlier versions</summary>
+
+- **1.0.20** — Store-compliance fixes flagged by Obsidian's automated review: raised `minAppVersion` to 1.8.0 (the plugin uses newer vault/workspace APIs), documented the two `eslint-disable` directives, and made `onunload` synchronous.
 
 - **1.0.19** — Refined the due-filter chips: the selected one now stands out clearly (orange fill + border) while the unselected one is distinguished by orange text only.
 

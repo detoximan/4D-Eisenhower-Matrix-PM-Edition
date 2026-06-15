@@ -74,7 +74,7 @@ export function DueDatePicker({ currentDueDate, onChange, variant, overdue }: Pr
         ref={dateInputRef}
         type="date"
         value={currentDueDate ?? ''}
-        onChange={handleDateChange}
+        onChange={(e) => void handleDateChange(e)}
         className="em-sr-only"
         aria-hidden
         tabIndex={-1}

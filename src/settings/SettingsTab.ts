@@ -111,12 +111,13 @@ export class MatrixSettingsTab extends PluginSettingTab {
           attr: { 'aria-label': `Remove ${folder}` },
           text: '×',
         });
-        removeBtn.addEventListener('click', async () => {
+        const removeFolder = async () => {
           this.plugin.settings.excludedFolders = folders.filter((f) => f !== folder);
           await this.plugin.saveSettings();
           this.plugin.notifyRepoConfigChanged();
           this.display();
-        });
+        };
+        removeBtn.addEventListener('click', () => void removeFolder());
       }
     }
 
@@ -151,7 +152,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
       this.display();
     };
 
-    addBtn.addEventListener('click', tryAdd);
+    addBtn.addEventListener('click', () => void tryAdd());
     addInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();

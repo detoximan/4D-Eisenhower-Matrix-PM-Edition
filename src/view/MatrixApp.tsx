@@ -625,7 +625,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       sensors={sensors}
       collisionDetection={cursorFirstCollisionDetection}
       onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
+      onDragEnd={(e) => void onDragEnd(e)}
     >
       <div className="em-app">
         {headerCollapsed ? (
@@ -747,13 +747,13 @@ export function MatrixApp({ app, repo, plugin }: Props) {
             }
             onToggleKanban={toggleKanban}
             onToggleCollapsed={toggleQuadrantCollapsed}
-            onToggleTask={handleToggle}
+            onToggleTask={(t) => void handleToggle(t)}
             onSetStatus={handleSetStatus}
             onSetDueDate={handleSetDueDate}
             onUpdateTask={handleUpdate}
             onAddTask={handleAdd}
             onOpenSource={handleOpenSource}
-            onMoveQuadrant={handleMove}
+            onMoveQuadrant={(t, q) => void handleMove(t, q)}
             createTagSuggest={createTagSuggest}
           />
         ) : (
@@ -769,13 +769,13 @@ export function MatrixApp({ app, repo, plugin }: Props) {
             kanbanQuadrant={effectiveKanban}
             onToggleKanban={toggleKanban}
             onToggleCollapsed={toggleQuadrantCollapsed}
-            onToggleTask={handleToggle}
+            onToggleTask={(t) => void handleToggle(t)}
             onSetStatus={handleSetStatus}
             onSetDueDate={handleSetDueDate}
             onUpdateTask={handleUpdate}
             onAddTask={handleAdd}
             onOpenSource={handleOpenSource}
-            onMoveQuadrant={handleMove}
+            onMoveQuadrant={(t, q) => void handleMove(t, q)}
             createTagSuggest={createTagSuggest}
           />
         )}
