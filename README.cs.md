@@ -19,7 +19,7 @@ Vizualizace tasků napříč celým vault-em v **5-polové Eisenhower matici** (
 | Funkce | Co dělá |
 |--------|---------|
 | **5-polová matice** | DO / DECIDE / DELEGATE / DELETE + záchytný **OPEN**. Kvadrant určuje první `#tag` za checkboxem (`#DO`, `#DECIDE`, `#DELEGATE`, `#DELETE`); cokoli jiného spadne do OPEN. |
-| **Kanban zobrazení** *(desktop)* | Rozbalí libovolný kvadrant na celou šířku se sloupci **To-do · In progress · Scheduled · Done**. Drag karet mezi sloupci mění stav, na jiný kvadrant je přesune, nebo task rovnou přidáš do sloupce. |
+| **Kanban zobrazení** | Rozbalí libovolný kvadrant na celou šířku se sloupci **To-do · In progress · Scheduled · Done**. Na desktopu drag karet mezi sloupci mění stav, na jiný kvadrant je přesune, nebo task rovnou přidáš do sloupce. Na mobilu/tabletu board scrolluje vodorovně a stav měníš přes menu karty (*Mark as…*). |
 | **Cross-vault agregace** | Sbírá tasky ze **všech `.md` souborů** ve vaultu (Dataview-like), ne jen z dnešní daily note — jeden board nad celým druhým mozkem. |
 | **6 stavů tasku** | Things-style `[ ]` to-do · `[/]` in progress · `[x]` done · `[-]` canceled · `[>]` forwarded · `[<]` scheduling. Každá karta má status box; libovolný stav nastavíš pravým klikem → *Mark as…*. |
 | **Plné CRUD** | Přidání (text + tagy + due date + priorita), inline editace, odškrtnutí, přesun mezi kvadranty — vše se zapíše přímo do Markdownu. |
@@ -94,7 +94,7 @@ Priorita ([Obsidian Tasks konvence](https://publish.obsidian.md/tasks/Getting+St
 | Zobrazit hotové tasky | Toggle „Done" v headeru |
 | Kompaktní zobrazení | Přepínač „Compact" v headeru — 2řádkové karty |
 | Změnit stav tasku | Pravý klik na kartu (nebo na status box) → *Mark as…* |
-| Kanban zobrazení (desktop) | Klik na kanban ikonu v hlavičce kvadrantu → status sloupce; další klik zpět na mřížku |
+| Kanban zobrazení | Klik na kanban ikonu v hlavičce kvadrantu → status sloupce; další klik zpět na mřížku. Na mobilu/tabletu sloupce scrollují vodorovně; stav karty změníš přes její menu (*Mark as…*) |
 
 ### Pořadí v kvadrantu
 
@@ -148,10 +148,12 @@ Něco postrádáš? [Issue na GitHubu](https://github.com/krcaljaroslav/4D-eisen
 
 ## Changelog
 
-**1.0.21** — Úklid lintu pro store review: async handlery obaleny `void`, přepnuto na `activeDocument` / `activeWindow` kvůli popout oknům, odstraněna nadbytečná type assertion, popsán zbývající direktivní komentář. Bez dopadu na uživatele. (Tři deprecation *recommendations* nechány — náhrady nejsou dostupné při `minAppVersion` 1.8.0.)
+**1.0.22** — Kanban zobrazení je teď dostupné i na **mobilu a tabletu**, nejen na desktopu. Status sloupce scrollují vodorovně (swipe mezi nimi); protože touch-drag je v Obsidian mobilním webview nespolehlivý, stav karty měníš přes její menu (*Mark as…*) — karta naskočí do odpovídajícího sloupce.
 
 <details>
 <summary>Starší verze</summary>
+
+- **1.0.21** — Úklid lintu pro store review: async handlery obaleny `void`, přepnuto na `activeDocument` / `activeWindow` kvůli popout oknům, odstraněna nadbytečná type assertion, popsán zbývající direktivní komentář. Bez dopadu na uživatele. (Tři deprecation *recommendations* nechány — náhrady nejsou dostupné při `minAppVersion` 1.8.0.)
 
 - **1.0.20** — Opravy kvůli automatické kontrole Obsidian store: zvýšen `minAppVersion` na 1.8.0, doplněny popisky ke dvěma `eslint-disable` direktivám, `onunload` převeden na synchronní.
 

@@ -19,7 +19,7 @@ Visualize tasks across your entire vault in a **5-quadrant Eisenhower matrix** (
 | Feature | What it does |
 |---------|--------------|
 | **5-quadrant matrix** | DO / DECIDE / DELEGATE / DELETE plus a catch-all **OPEN**. The quadrant is the first `#tag` after the checkbox (`#DO`, `#DECIDE`, `#DELEGATE`, `#DELETE`); anything else lands in OPEN. |
-| **Kanban view** *(desktop)* | Expand any quadrant to full width with **To-do · In progress · Scheduled · Done** status columns. Drag cards between columns to change status, onto another quadrant to move them, or add a task straight into a column. |
+| **Kanban view** | Expand any quadrant to full width with **To-do · In progress · Scheduled · Done** status columns. On desktop drag cards between columns to change status, onto another quadrant to move them, or add a task straight into a column. On mobile/tablet the board scrolls horizontally and you change status via the card menu (*Mark as…*). |
 | **Cross-vault aggregation** | Collects tasks from **every `.md` file** in the vault (Dataview-like), not just today's daily note — one board for your whole second brain. |
 | **6 task statuses** | Things-style `[ ]` to-do · `[/]` in progress · `[x]` done · `[-]` canceled · `[>]` forwarded · `[<]` scheduling. Each card shows a status box; set any state via right-click → *Mark as…*. |
 | **Full CRUD** | Add (text + tags + due date + priority), edit inline, toggle done, move between quadrants — every change is written straight back to your Markdown. |
@@ -94,7 +94,7 @@ Priority ([Obsidian Tasks convention](https://publish.obsidian.md/tasks/Getting+
 | Show completed tasks | The "Done" toggle in the header |
 | Compact view | The "Compact" toggle in the header — 2-line cards |
 | Set task status | Right-click the card (or the status box) → *Mark as…* |
-| Kanban view (desktop) | Click the kanban icon in a quadrant header → status columns; click it again to return to the grid |
+| Kanban view | Click the kanban icon in a quadrant header → status columns; click it again to return to the grid. On mobile/tablet the columns scroll horizontally; change a card's status via its menu (*Mark as…*) |
 
 ### In-quadrant order
 
@@ -148,10 +148,12 @@ Missing something? [Open an issue](https://github.com/krcaljaroslav/4D-eisenhowe
 
 ## Changelog
 
-**1.0.21** — Lint cleanup for the store review: void-wrapped the async event handlers, switched to `activeDocument` / `activeWindow` for popout-window compatibility, removed a redundant type assertion, and described the remaining directive comment. No user-facing changes. (Three deprecation *recommendations* are left as-is — their replacements aren't available at `minAppVersion` 1.8.0.)
+**1.0.22** — Kanban view is now available on **mobile and tablet**, not just desktop. The status columns scroll horizontally (swipe between them); since touch-drag is unreliable in the Obsidian mobile webview, you change a card's status through its menu (*Mark as…*) — the card jumps to the matching column.
 
 <details>
 <summary>Earlier versions</summary>
+
+- **1.0.21** — Lint cleanup for the store review: void-wrapped the async event handlers, switched to `activeDocument` / `activeWindow` for popout-window compatibility, removed a redundant type assertion, and described the remaining directive comment. No user-facing changes. (Three deprecation *recommendations* are left as-is — their replacements aren't available at `minAppVersion` 1.8.0.)
 
 - **1.0.20** — Store-compliance fixes flagged by Obsidian's automated review: raised `minAppVersion` to 1.8.0 (the plugin uses newer vault/workspace APIs), documented the two `eslint-disable` directives, and made `onunload` synchronous.
 

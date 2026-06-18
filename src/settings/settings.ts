@@ -38,7 +38,7 @@ export type PluginSettings = {
    */
   compactMode: boolean;
   /**
-   * Kanban režim (jen desktop): pokud je nastaven kvadrant, ten se rozbalí
+   * Kanban režim (desktop i mobil/tablet): pokud je nastaven kvadrant, ten se rozbalí
    * na celou šířku se 4 status-sloupci (To-do / In progress / Scheduled /
    * Done) a zbylé kvadranty jsou pod ním. `null` = normální 5-mřížka.
    */

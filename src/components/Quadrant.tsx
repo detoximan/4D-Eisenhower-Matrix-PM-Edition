@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { Platform, type PaneType } from 'obsidian';
+import { type PaneType } from 'obsidian';
 import type { Priority, Quadrant as QuadrantKind, Task } from '../core/types.ts';
 import { QUADRANT_META } from '../core/types.ts';
 import { TaskCard } from './TaskCard.tsx';
@@ -101,18 +101,16 @@ export function Quadrant({
           >
             +
           </button>
-          {!Platform.isMobile && (
-            <button
-              type="button"
-              onClick={onToggleKanban}
-              className={`em-kanban-btn em-kanban-btn-labeled ${kanbanActive ? 'em-kanban-btn-active' : ''}`}
-              title={kanbanActive ? 'Back to grid' : 'Kanban view (status columns)'}
-              aria-label={kanbanActive ? 'Back to grid' : 'Kanban view'}
-            >
-              <Icon name="square-kanban" className="em-kanban-icon" />
-              <span>Kanban</span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onToggleKanban}
+            className={`em-kanban-btn em-kanban-btn-labeled ${kanbanActive ? 'em-kanban-btn-active' : ''}`}
+            title={kanbanActive ? 'Back to grid' : 'Kanban view (status columns)'}
+            aria-label={kanbanActive ? 'Back to grid' : 'Kanban view'}
+          >
+            <Icon name="square-kanban" className="em-kanban-icon" />
+            <span>Kanban</span>
+          </button>
           <span className="em-quadrant-count">{tasks.length}</span>
         </div>
       </header>

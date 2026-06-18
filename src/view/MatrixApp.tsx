@@ -587,7 +587,10 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   );
 
   const isPastOrFuture = date !== today;
-  const effectiveKanban = Platform.isMobile ? null : kanbanQuadrant;
+  // Kanban je dostupný i na mobilu/tabletu. Přesun mezi status-sloupci tam
+  // nejde dragem (touch-drag je v Obsidian webview nespolehlivý) — řeší se přes
+  // kontextové menu karty „Mark as…", stejně jako přesun mezi kvadranty.
+  const effectiveKanban = kanbanQuadrant;
 
   // Ovládání zobrazení (Collapse all / Done / Compact) — sdílené mezi
   // rozbalenou i sbalenou hlavičkou, ať jsou ty přepínače dostupné i
