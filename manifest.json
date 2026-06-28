@@ -1,7 +1,7 @@
 {
   "id": "4d-eisenhower-matrix-pm-edition",
   "name": "4D Eisenhower Matrix — PM Edition",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "minAppVersion": "1.8.0",
   "description": "Fork of 4D Eisenhower Matrix with subtask hierarchy support. Subtasks inherit quadrant from parent tasks instead of landing in OPEN. Based on original plugin by Jaroslav Krčál.",
   "author": "Pavel Malyk (fork) / Jaroslav Krčál (original)",
