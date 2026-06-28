@@ -614,8 +614,8 @@
  *   - užší kvadrant = méně sloupců, dolů až na 1
  */
 .em-task-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: var(--size-2-2);
   padding: 0;
   margin: 0;
@@ -746,6 +746,21 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Clickable source file — looks like a link */
+button.em-task-source-clickable {
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  max-width: 100%;
+}
+
+button.em-task-source-clickable:hover {
+  color: var(--text-muted);
+  text-decoration: underline;
 }
 
 .em-task-badges {
@@ -1390,4 +1405,140 @@ button.em-priority {
   .em-kanban-bottom {
     grid-template-columns: 1fr;
   }
+}
+
+/* === Subtask visual hierarchy === */
+.em-task-subtask {
+  border-left: 3px solid var(--text-faint);
+  background-color: color-mix(in srgb, var(--background-secondary) 60%, var(--background-primary));
+}
+
+.em-task-subtask .em-task-text {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.em-task-subtask .em-task-checkbox {
+  opacity: 0.7;
+}
+
+/* Hover — подсветить всю группу */
+.em-task:has(+ .em-task-subtask:hover),
+.em-task-subtask:hover {
+  border-color: var(--background-modifier-border-hover, var(--text-faint));
+}
+
+/* === Drag grip handle (manual sort mode) === */
+.em-task-grip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--text-faint);
+  cursor: grab;
+  font-size: 12px;
+  letter-spacing: 1px;
+  user-select: none;
+  -webkit-user-select: none;
+  opacity: 0.4;
+  transition: opacity 0.15s ease;
+  margin-top: 2px;
+}
+
+.em-task-grip:hover {
+  opacity: 0.8;
+  color: var(--text-muted);
+}
+
+.em-task-grip:active {
+  cursor: grabbing;
+  opacity: 1;
+  color: var(--interactive-accent);
+}
+
+/* === Subtask collapse/expand triangle === */
+.em-task-collapse {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1;
+  flex-shrink: 0;
+  border-radius: var(--radius-s);
+  margin-top: 3px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.em-task-collapse:hover {
+  color: var(--text-normal);
+  background-color: var(--background-modifier-hover);
+}
+
+/* Task being sorted (dragged) — subtle overlay + scale */
+.em-task-sorting {
+  opacity: 0.4;
+  box-shadow: 0 0 0 2px var(--interactive-accent);
+  z-index: 10;
+}
+
+/* Sort mode toggle button */
+.em-sort-manual {
+  color: var(--interactive-accent) !important;
+  font-weight: var(--font-medium);
+}
+
+/* Sequential position number badge (per-file within a quadrant) */
+.em-task-number {
+  flex: 0 0 auto;
+  min-width: 1.4em;
+  height: 1.4em;
+  padding: 0 0.35em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72em;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 999px;
+  background: var(--background-modifier-border);
+  color: var(--text-muted);
+  margin-right: 2px;
+}
+.em-task-subtask .em-task-number {
+  background: transparent;
+  color: var(--text-faint);
+}
+
+
+/* === Per-quadrant "Collapse tasks" button === */
+.em-quadrant-collapse-tasks {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 1px 6px;
+  border-radius: var(--radius-s);
+  line-height: 1;
+}
+.em-quadrant-collapse-tasks:hover {
+  color: var(--text-normal);
+  background-color: var(--background-modifier-hover);
+}
+.em-cct-tri {
+  font-size: 9px;
+  line-height: 1;
+}
+.em-cct-lbl {
+  font-size: 9px;
+  line-height: 1.05;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }

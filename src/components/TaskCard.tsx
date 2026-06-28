@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useDraggable } from '@dnd-kit/core';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Menu, Platform, setIcon, type PaneType } from 'obsidian';
 import type { Priority, Quadrant, Task } from '../core/types.ts';
 import {
@@ -34,6 +35,16 @@ type Props = {
   graceExpiresAt?: number;
   isActiveDrag: boolean;
   compact: boolean;
+  /** When true, use useSortable for intra-quadrant drag reorder. */
+  sortable: boolean;
+  /** Position number within its group (per file in a quadrant). */
+  number?: number;
+  /** If this root task has subtasks, show collapse/expand triangle. */
+  isCollapsible?: boolean;
+  /** If the subtasks are currently hidden. */
+  isCollapsed?: boolean;
+  /** Toggle collapse/expand of subtasks. */
+  onToggleCollapse?: () => void;
   onToggle: () => void;
   onSetStatus: (newStatus: string) => Promise<void>;
   onSetDueDate: (newDueDate: string | null) => Promise<void>;
@@ -53,6 +64,11 @@ export function TaskCard({
   graceExpiresAt,
   isActiveDrag,
   compact,
+  sortable,
+  number,
+  isCollapsible,
+  isCollapsed,
+  onToggleCollapse,
   onToggle,
   onSetStatus,
   onSetDueDate,
@@ -65,13 +81,26 @@ export function TaskCard({
   const [editing, setEditing] = useState(false);
 
   const draggableId = `${task.sourceFile}:${task.lineIndex}`;
-  // Drag jen na desktopu. Na mobilu je touch-drag v Obsidian webview
-  // nespolehlivý (long-press hijackne OS) — místo toho přesun přes
-  // context menu „Přesunout do…".
-  const { attributes, listeners, setNodeRef } = useDraggable({
+  // useSortable gives us drag attributes + transform for reordering.
+  // When sortable=false, the item is still draggable for cross-quadrant
+  // moves (handled by DndContext in MatrixApp), but without sort position.
+  // When sortable=true, transitions animate smoothly during reorder.
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: draggableId,
     disabled: editing || Platform.isMobile,
   });
+
+  const sortableStyle: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
   const now = Date.now();
   // Grace platí pro libovolný „closed" stav ([x] i [-]) — applyLocalStatus
@@ -240,11 +269,19 @@ export function TaskCard({
       {...(editing ? {} : listeners)}
       onDoubleClick={handleDoubleClick}
       onContextMenu={showContextMenu}
+      style={{
+        ...(task.indent > 0 ? { paddingLeft: `${task.indent * 24}px` } : undefined),
+        ...sortableStyle,
+      }}
       className={`em-task ${overdue ? 'em-task-overdue' : ''} ${
         inGrace ? 'em-task-grace' : ''
       } ${editing ? 'em-task-editing' : ''} ${task.checked && !editing ? 'em-task-checked' : ''} ${
         task.status === '-' && !editing ? 'em-task-canceled' : ''
-      } ${isActiveDrag && !Platform.isMobile ? 'em-task-active-drag' : ''}`}
+      } ${isActiveDrag && !Platform.isMobile ? 'em-task-active-drag' : ''} ${
+        task.indent > 0 ? 'em-task-subtask' : ''
+      } ${isDragging ? 'em-task-sorting' : ''} ${
+        sortable ? 'em-task-sortable' : ''
+      }`}
       title={
         editing
           ? undefined
@@ -263,6 +300,31 @@ export function TaskCard({
         />
       ) : compact ? (
         <div className="em-task-row">
+          {sortable && !editing && (
+            <span
+              className="em-task-grip"
+              {...(editing ? {} : listeners)}
+              title="Drag to reorder"
+            >
+              ⠿
+            </span>
+          )}
+          {isCollapsible && !editing && (
+            <button
+              type="button"
+              className="em-task-collapse"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleCollapse?.();
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              title={isCollapsed ? 'Expand subtasks' : 'Collapse subtasks'}
+              aria-expanded={!isCollapsed}
+            >
+              {isCollapsed ? '▶' : '▼'}
+            </button>
+          )}
+          {number !== undefined && <span className="em-task-number">{number}</span>}
           {checkbox}
           <div className="em-task-body em-task-body-compact">
             <p className="em-task-text em-task-text-compact">{taskText}</p>
@@ -274,13 +336,48 @@ export function TaskCard({
         </div>
       ) : (
         <div className="em-task-row">
+          {sortable && !editing && (
+            <span
+              className="em-task-grip"
+              {...(editing ? {} : listeners)}
+              title="Drag to reorder"
+            >
+              ⠿
+            </span>
+          )}
+          {isCollapsible && !editing && (
+            <button
+              type="button"
+              className="em-task-collapse"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleCollapse?.();
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              title={isCollapsed ? 'Expand subtasks' : 'Collapse subtasks'}
+              aria-expanded={!isCollapsed}
+            >
+              {isCollapsed ? '▶' : '▼'}
+            </button>
+          )}
+          {number !== undefined && <span className="em-task-number">{number}</span>}
           {checkbox}
           <div className="em-task-body">
             <p className="em-task-text">{taskText}</p>
             {!task.isFromDnes && (
-              <p className="em-task-source" title={task.sourceFile}>
+              <button
+                type="button"
+                className="em-task-source em-task-source-clickable"
+                title={`Open ${task.sourceFile}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenSource(false);
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                onDoubleClick={(e) => e.stopPropagation()}
+              >
                 📁 {shortenPath(task.sourceFile)}
-              </p>
+              </button>
             )}
             <div className="em-task-badges">
               {task.contextTags.map((tag) => (

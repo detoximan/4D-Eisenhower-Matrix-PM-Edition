@@ -1,5 +1,5 @@
 import type { Quadrant } from '../core/types.ts';
-import type { DueFilter } from '../core/taskUtils.ts';
+import type { DueFilter, SortMode } from '../core/taskUtils.ts';
 
 /**
  * Plugin nastavení — persistovaná napříč restarty Obsidianu přes
@@ -43,6 +43,12 @@ export type PluginSettings = {
    * Done) a zbylé kvadranty jsou pod ním. `null` = normální 5-mřížka.
    */
   kanbanQuadrant: Quadrant | null;
+  /**
+   * Sort mode for tasks within quadrants.
+   * - 'auto': sort by overdue → priority → dueDate → text (default)
+   * - 'manual': sort by file order (lineIndex), enabling drag-and-drop reordering
+   */
+  sortMode: SortMode;
 };
 
 export const DEFAULT_SETTINGS: PluginSettings = {
@@ -65,4 +71,5 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   headerCollapsed: false,
   compactMode: false,
   kanbanQuadrant: null,
+  sortMode: 'auto',
 };

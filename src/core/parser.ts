@@ -5,7 +5,7 @@
 
 import type { Priority, Quadrant } from './types.ts';
 
-const QUADRANT_TAGS = ['#DO', '#DECIDE', '#DELEGATE', '#DELETE'] as const;
+const QUADRANT_TAGS = ['#DO', '#DECIDE', '#DELEGATE', '#DELETE', '#СДЕЛАТЬ', '#ПОМНИТЬ', '#НАДО', '#ТАКОЕ-СЕБЕ'] as const;
 
 // `[^\]]` = jakýkoli stav uvnitř hranatých závorek (kromě samotného `]`).
 // Plugin pak rozliší 6 Basic stavů + ostatní (viz TASK_STATUSES v types.ts).
@@ -46,6 +46,10 @@ export type ParsedTask = {
   startDate?: string;
   doneDate?: string;
   priority?: Priority;
+  /** Indent level — 0 = root task, 1+ = subtask. */
+  indent: number;
+  /** Index of parent task in the parsed array. Undefined for root tasks. */
+  parentIndex?: number;
 };
 
 /**
@@ -65,6 +69,9 @@ export function parseDaily(
   let inSection = false;
   let inCodeBlock = false;
   let sectionHeadingLine: number | null = null;
+
+  // Stack of potential parents for subtask inheritance
+  const parentStack: { indent: number; quadrant: Quadrant; idx: number }[] = [];
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -88,7 +95,31 @@ export function parseDaily(
     if (!inSection) continue;
 
     const task = parseTaskLine(line, i);
-    if (task) tasks.push(task);
+    if (!task) continue;
+
+    // Check if this task has its own quadrant tag
+    const firstTagMatch = /^\s*(#[\p{L}][\p{L}\p{N}_-]*)/u.exec(task.raw);
+    const firstTag = firstTagMatch?.[1]?.toUpperCase();
+    const hasOwnQuadrant = firstTag && ['#DO', '#DECIDE', '#DELEGATE', '#DELETE'].includes(firstTag);
+
+    if (task.indent > 0 && !hasOwnQuadrant) {
+      // Subtask without own quadrant → inherit from nearest parent
+      for (let s = parentStack.length - 1; s >= 0; s--) {
+        if (parentStack[s].indent < task.indent) {
+          task.quadrant = parentStack[s].quadrant;
+          task.parentIndex = parentStack[s].idx;
+          break;
+        }
+      }
+    }
+
+    // Update parent stack
+    while (parentStack.length > 0 && parentStack[parentStack.length - 1].indent >= task.indent) {
+      parentStack.pop();
+    }
+    parentStack.push({ indent: task.indent, quadrant: task.quadrant, idx: tasks.length });
+
+    tasks.push(task);
   }
 
   return { tasks, sectionHeadingLine };
@@ -96,11 +127,16 @@ export function parseDaily(
 
 /**
  * Parsuje VŠECHNY tasky v souboru, nezávisle na sekci. Přeskakuje code blocky.
+ * Subtasky (odsazené řádky bez vlastního quadrant tagu) dědí quadrant
+ * od nejbližšího nadřazeného tasku s nižším odsazením.
  */
 export function parseAllTasks(raw: string): ParsedTask[] {
   const lines = raw.split(/\r?\n/);
   const tasks: ParsedTask[] = [];
   let inCodeBlock = false;
+
+  // Stack of potential parents: { indent, quadrant, indexInTasks }
+  const parentStack: { indent: number; quadrant: Quadrant; idx: number }[] = [];
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -112,7 +148,36 @@ export function parseAllTasks(raw: string): ParsedTask[] {
     if (inCodeBlock) continue;
 
     const task = parseTaskLine(line, i);
-    if (task) tasks.push(task);
+    if (!task) continue;
+
+    // Calculate indent: number of leading spaces / 2
+    const indentMatch = /^(\s*)/.exec(line);
+    const indent = indentMatch ? Math.floor(indentMatch[1].length / 2) : 0;
+    task.indent = indent;
+
+    // Check if this task has its own quadrant tag
+    const firstTagMatch = /^\s*(#[\p{L}][\p{L}\p{N}_-]*)/u.exec(task.raw);
+    const firstTag = firstTagMatch?.[1]?.toUpperCase();
+    const hasOwnQuadrant = firstTag && ['#DO', '#DECIDE', '#DELEGATE', '#DELETE'].includes(firstTag);
+
+    if (indent > 0 && !hasOwnQuadrant) {
+      // Subtask without own quadrant → inherit from nearest parent with lower indent
+      for (let s = parentStack.length - 1; s >= 0; s--) {
+        if (parentStack[s].indent < indent) {
+          task.quadrant = parentStack[s].quadrant;
+          task.parentIndex = parentStack[s].idx;
+          break;
+        }
+      }
+    }
+
+    // Update parent stack: remove entries with indent >= current
+    while (parentStack.length > 0 && parentStack[parentStack.length - 1].indent >= indent) {
+      parentStack.pop();
+    }
+    parentStack.push({ indent, quadrant: task.quadrant, idx: tasks.length });
+
+    tasks.push(task);
   }
 
   return tasks;
@@ -157,6 +222,10 @@ export function parseTaskLine(line: string, lineIndex: number): ParsedTask | nul
     .replace(PRIORITY_STRIP_RE, '');
   text = text.replace(/\s+/g, ' ').trim();
 
+  // Calculate indent level from leading whitespace
+  const indentMatch = /^(\s*)/.exec(line);
+  const indent = indentMatch ? Math.floor(indentMatch[1].length / 2) : 0;
+
   return {
     lineIndex,
     raw: line,
@@ -169,6 +238,7 @@ export function parseTaskLine(line: string, lineIndex: number): ParsedTask | nul
     startDate,
     doneDate,
     priority,
+    indent,
   };
 }
 
@@ -178,12 +248,16 @@ function determineQuadrant(body: string): Quadrant {
   const first = firstTokenMatch[1].toUpperCase();
   switch (first) {
     case '#DO':
+    case '#СДЕЛАТЬ':
       return 'DO';
     case '#DECIDE':
+    case '#ПОМНИТЬ':
       return 'DECIDE';
     case '#DELEGATE':
+    case '#НАДО':
       return 'DELEGATE';
     case '#DELETE':
+    case '#ТАКОЕ-СЕБЕ':
       return 'DELETE';
     default:
       return 'OPEN';

@@ -14,6 +14,9 @@ const ctx = await esbuild.context({
   banner: { js: banner },
   entryPoints: ['main.ts'],
   bundle: true,
+  define: prod
+    ? { 'process.env.NODE_ENV': '"production"', 'process.env': '{"NODE_ENV":"production"}' }
+    : { 'process.env.NODE_ENV': '"development"', 'process.env': '{"NODE_ENV":"development"}' },
   external: [
     'obsidian',
     'electron',

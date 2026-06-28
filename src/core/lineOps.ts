@@ -13,11 +13,11 @@ const DONE_DATE_RE = /\s*✅\s*\d{4}-\d{2}-\d{2}/g;
 const DUE_DATE_STRIP_RE = /\s*📅\s*\d{4}-\d{2}-\d{2}/;
 const LEADING_TAGS_FULL_RE = /^(\s*-\s+\[[^\]]\]\s+(?:#[\p{L}\p{N}_-]+\s+)*)/u;
 const LEADING_QUADRANT_TAG_RE =
-  /^(\s*-\s+\[[^\]]\]\s+)(#(?:DO|DECIDE|DELEGATE|DELETE))(\s+|$)/i;
+  /^(\s*-\s+\[[^\]]\]\s+)(#(?:DO|DECIDE|DELEGATE|DELETE|СДЕЛАТЬ|ПОМНИТЬ|НАДО|ТАКОЕ-СЕБЕ))(\s+|$)/i;
 const LEADING_NO_TAG_RE = /^(\s*-\s+\[[^\]]\]\s+)(.*)$/;
 const FRONTMATTER_END_RE = /^---\s*$/;
 
-const QUADRANT_TAG_SET = new Set(['#DO', '#DECIDE', '#DELEGATE', '#DELETE']);
+const QUADRANT_TAG_SET = new Set(['#DO', '#DECIDE', '#DELEGATE', '#DELETE', '#СДЕЛАТЬ', '#ПОМНИТЬ', '#НАДО', '#ТАКОЕ-СЕБЕ']);
 
 // ============================================================
 // Toggle checkbox + manage ✅ done date
@@ -98,7 +98,8 @@ export function buildTaskLine(
 
   const contextTags = leadingTags.filter((t) => !QUADRANT_TAG_SET.has(t.toUpperCase()));
 
-  const prefix = quadrant === 'OPEN' ? '' : `#${quadrant} `;
+  const ruTag = QUADRANT_TO_RU[quadrant];
+  const prefix = ruTag ? `${ruTag} ` : '';
   const tagsPart = contextTags.length > 0 ? contextTags.join(' ') + ' ' : '';
   const priorityPart = priority ? `${PRIORITY_EMOJI[priority]} ` : '';
   const duePart = dueDate ? `📅 ${dueDate} ` : '';
@@ -117,6 +118,15 @@ export type MoveResult = {
   newQuadrant: Quadrant;
 };
 
+// Map internal Quadrant codes to Russian tags (used when writing to files)
+const QUADRANT_TO_RU: Record<Quadrant, string> = {
+  DO: '#СДЕЛАТЬ',
+  DECIDE: '#ПОМНИТЬ',
+  DELEGATE: '#НАДО',
+  DELETE: '#ТАКОЕ-СЕБЕ',
+  OPEN: '',
+};
+
 export function moveLineQuadrant(line: string, newQuadrant: Quadrant): MoveResult {
   let newLine: string;
 
@@ -124,17 +134,15 @@ export function moveLineQuadrant(line: string, newQuadrant: Quadrant): MoveResul
   if (taggedMatch) {
     const prefix = taggedMatch[1];
     const rest = line.slice(prefix.length + taggedMatch[2].length + taggedMatch[3].length);
-    newLine =
-      newQuadrant === 'OPEN'
-        ? `${prefix}${rest}`
-        : `${prefix}#${newQuadrant} ${rest}`;
+    const targetTag = QUADRANT_TO_RU[newQuadrant];
+    newLine = targetTag ? `${prefix}${targetTag} ${rest}` : `${prefix}${rest.replace(/^\s+/, '')}`;
   } else {
     const noTagMatch = LEADING_NO_TAG_RE.exec(line);
     if (!noTagMatch) throw new Error(`Not a task line: "${line}"`);
     if (newQuadrant === 'OPEN') {
       return { previousLine: line, newLine: line, newQuadrant };
     }
-    newLine = `${noTagMatch[1]}#${newQuadrant} ${noTagMatch[2]}`;
+    newLine = `${noTagMatch[1]}${QUADRANT_TO_RU[newQuadrant]} ${noTagMatch[2]}`;
   }
 
   return { previousLine: line, newLine, newQuadrant };
@@ -227,7 +235,8 @@ export function updateLineTextAndTags(
   // Zachováme původní status (` `, `/`, `x`, `-`, `>`, `<` …) — update se
   // týká jen textu/tagů/datumů/priority, ne checkbox stavu.
   const statusChar = parsed.status;
-  const quadrantPart = parsed.quadrant === 'OPEN' ? '' : `#${parsed.quadrant} `;
+  const ruTag = QUADRANT_TO_RU[parsed.quadrant];
+  const quadrantPart = ruTag ? `${ruTag} ` : '';
   const tagsPart = normalizedTags.length > 0 ? normalizedTags.join(' ') + ' ' : '';
   const priorityPart = effectivePriority ? `${PRIORITY_EMOJI[effectivePriority]} ` : '';
   const duePart = effectiveDueDate ? `📅 ${effectiveDueDate} ` : '';
@@ -309,6 +318,49 @@ function findFrontmatterEnd(lines: string[]): number {
     if (FRONTMATTER_END_RE.test(lines[i])) return i;
   }
   return -1;
+}
+
+// ============================================================
+// Move block of consecutive lines (task + subtasks) in file content
+// ============================================================
+
+/**
+ * Move a block of consecutive lines within file content.
+ * Used for drag-and-drop reordering of tasks and their subtasks.
+ *
+ * @param content - Full file content
+ * @param sourceStart - First line of the block (inclusive, 0-based)
+ * @param sourceEnd   - Last line of the block (inclusive, 0-based)
+ * @param targetLine  - Line index BEFORE which the block should be placed
+ *   after removal. If the block is dragged down (targetLine > sourceStart),
+ *   the effective target is adjusted automatically.
+ */
+export function moveBlockInContent(
+  content: string,
+  sourceStart: number,
+  sourceEnd: number,
+  targetLine: number,
+): string {
+  const eol = content.includes('\r\n') ? '\r\n' : '\n';
+  const lines = content.split(/\r?\n/);
+
+  const blockLen = sourceEnd - sourceStart + 1;
+  const block = lines.slice(sourceStart, sourceEnd + 1);
+
+  // Remove block from original position
+  lines.splice(sourceStart, blockLen);
+
+  // Adjust target after removal: if target was below the removed block,
+  // shift it up by the block length.
+  let adj = targetLine;
+  if (targetLine > sourceStart) {
+    adj -= blockLen;
+  }
+
+  // Insert block at adjusted position
+  lines.splice(adj, 0, ...block);
+
+  return lines.join(eol);
 }
 
 // ============================================================

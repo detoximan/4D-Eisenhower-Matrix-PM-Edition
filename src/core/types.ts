@@ -27,6 +27,18 @@ export type Task = {
   priority?: Priority;
   sourceFile: string;
   isFromDnes: boolean;
+  /** Indent level — 0 = root task, 1+ = subtask. */
+  indent: number;
+  /** Index of parent task in the parsed array. Undefined for root tasks. */
+  parentIndex?: number;
+  /** Project file (pro-*.md path) this root task is listed in, if any. */
+  projectKey?: string;
+  /** Slug of that project (frontmatter `slug`, fallback filename). */
+  projectSlug?: string;
+  /** 1-based order of this task within its project's quadrant list. */
+  projectOrder?: number;
+  /** Line index of this task's [[link]] inside the project file. */
+  projectLinkLine?: number;
 };
 
 /**
@@ -61,28 +73,28 @@ export const QUADRANT_META: Record<
   { label: string; subtitle: string; accent: string }
 > = {
   DO: {
-    label: 'DO',
-    subtitle: 'Important + Urgent',
+    label: 'СДЕЛАТЬ',
+    subtitle: 'Важно + Срочно',
     accent: 'var(--color-red)',
   },
   DECIDE: {
-    label: 'DECIDE',
-    subtitle: 'Important + Less Urgent',
+    label: 'ПОМНИТЬ',
+    subtitle: 'Важно + Не срочно',
     accent: 'var(--color-blue)',
   },
   DELEGATE: {
-    label: 'DELEGATE',
-    subtitle: 'Less Important + Urgent',
+    label: 'НАДО',
+    subtitle: 'Не важно + Срочно',
     accent: 'var(--color-green)',
   },
   DELETE: {
-    label: 'DELETE',
-    subtitle: 'Less Important + Less Urgent',
+    label: 'ТАКОЕ СЕБЕ',
+    subtitle: 'Не важно + Не срочно',
     accent: 'var(--color-yellow)',
   },
   OPEN: {
-    label: 'OPEN',
-    subtitle: 'No quadrant tag',
+    label: 'ВХОДЯЩИЕ',
+    subtitle: 'Нет тега квадранта',
     accent: 'var(--text-muted)',
   },
 };

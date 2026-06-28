@@ -2,15 +2,21 @@ import { useMemo } from 'react';
 import type { PaneType } from 'obsidian';
 import type { Priority, Task, Quadrant as QuadrantKind } from '../core/types.ts';
 import { QUADRANTS } from '../core/types.ts';
+import type { SortMode } from '../core/taskUtils.ts';
 import { Quadrant } from './Quadrant.tsx';
 
 type Props = {
   tasks: Task[];
   today: string;
   collapsed: Record<QuadrantKind, boolean>;
+  collapsedParents: Set<string>;
+  onToggleParentCollapse: (key: string) => void;
+  onCollapseTasks: (keys: string[]) => void;
+  onExpandTasks: (keys: string[]) => void;
   graceMap: Map<string, number>;
   activeTaskId: string | null;
   compact: boolean;
+  sortMode: SortMode;
   kanbanQuadrant: QuadrantKind | null;
   onToggleKanban: (q: QuadrantKind) => void;
   onToggleCollapsed: (q: QuadrantKind) => void;
@@ -56,9 +62,14 @@ export function Matrix(props: Props) {
       tasks={tasksByQuadrant[q]}
       today={props.today}
       collapsed={props.collapsed[q]}
+      collapsedParents={props.collapsedParents}
+      onToggleParentCollapse={props.onToggleParentCollapse}
+      onCollapseTasks={props.onCollapseTasks}
+      onExpandTasks={props.onExpandTasks}
       graceMap={props.graceMap}
       activeTaskId={props.activeTaskId}
       compact={props.compact}
+      sortMode={props.sortMode}
       kanbanActive={props.kanbanQuadrant === q}
       onToggleKanban={() => props.onToggleKanban(q)}
       onToggleCollapsed={() => props.onToggleCollapsed(q)}

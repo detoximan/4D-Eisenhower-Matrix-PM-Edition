@@ -5,6 +5,110 @@
 
 import type { Priority, Task } from './types.ts';
 
+/**
+ * Sort mode for task display.
+ * - 'auto': current behaviour — sort by overdue → priority → dueDate → text
+ * - 'manual': sort by lineIndex (order in file), enabling drag-and-drop reordering
+ */
+export type SortMode = 'auto' | 'manual';
+
+/**
+ * Find the full contiguous block of a task and its subtasks.
+ * Returns [startLineIndex, endLineIndex] (inclusive, 0-based line indices).
+ *
+ * A block is: the root task + all consecutive subtasks with higher indent
+ * that come after it (same sourceFile). Stops at a root-level (indent=0)
+ * task or end of array.
+ */
+export function findTaskBlockRange(
+  task: Task,
+  fullTasks: Task[],
+): [number, number] {
+  // Find the root task of this group
+  const root = findRootTask(task, fullTasks);
+  const rootLine = root.lineIndex;
+  const rootFile = root.sourceFile;
+
+  let startLine = rootLine;
+  let endLine = rootLine;
+
+  // Walk forward through tasks in the same file, collecting subtasks
+  for (let i = 0; i < fullTasks.length; i++) {
+    const t = fullTasks[i];
+    if (t.sourceFile !== rootFile) continue;
+    if (t.lineIndex > endLine && t.indent > 0) {
+      // This is a subtask following our block
+      // We need to check it belongs to our root (not a sibling subtask)
+      // Walk backwards to find its parent chain
+      let parent = t;
+      while (parent.parentIndex !== undefined) {
+        parent = fullTasks[parent.parentIndex];
+      }
+      if (parent.lineIndex === rootLine) {
+        endLine = t.lineIndex;
+      }
+    }
+  }
+
+  return [startLine, endLine];
+}
+
+/**
+ * Check whether two tasks can be reordered (drag-and-drop) relative to each other.
+ * Rules:
+ * - Both must be root tasks (indent === 0)
+ * - Both must be in the same sourceFile
+ * - Subtasks can only be reordered WITHIN their parent (same block)
+ * - A subtask can never become a root, and a root can never become a subtask
+ */
+/**
+ * Find the block of a SINGLE subtask: the subtask line plus any deeper-
+ * indented descendant lines that follow it in the same file. Unlike
+ * findTaskBlockRange, this does NOT jump to the root, so a subtask can be
+ * reordered among its siblings without dragging the whole parent block.
+ */
+export function findSubtaskBlockRange(
+  task: Task,
+  fullTasks: Task[],
+): [number, number] {
+  const sameFile = fullTasks
+    .filter((t) => t.sourceFile === task.sourceFile)
+    .sort((a, b) => a.lineIndex - b.lineIndex);
+  const startIdx = sameFile.findIndex((t) => t.lineIndex === task.lineIndex);
+  let endLine = task.lineIndex;
+  if (startIdx !== -1) {
+    for (let i = startIdx + 1; i < sameFile.length; i++) {
+      if (sameFile[i].indent > task.indent) {
+        endLine = sameFile[i].lineIndex;
+      } else {
+        break;
+      }
+    }
+  }
+  return [task.lineIndex, endLine];
+}
+
+export function canReorder(
+  dragged: Task,
+  target: Task,
+  fullTasks: Task[],
+): boolean {
+  // Subtask → subtask within same parent: allowed
+  if (dragged.indent > 0 && target.indent > 0) {
+    const dragRoot = findRootTask(dragged, fullTasks);
+    const targetRoot = findRootTask(target, fullTasks);
+    return dragRoot === targetRoot && dragRoot.sourceFile === targetRoot.sourceFile;
+  }
+
+  // Root → root: allowed if same file
+  if (dragged.indent === 0 && target.indent === 0) {
+    return dragged.sourceFile === target.sourceFile;
+  }
+
+  // Mixed (root ↔ subtask): not allowed
+  return false;
+}
+
 const PRIORITY_RANK: Record<Priority | 'none', number> = {
   highest: 0,
   high: 1,
@@ -20,30 +124,75 @@ function priorityRank(p?: Priority): number {
 
 /**
  * Comparator pro řazení tasků uvnitř kvadrantu:
+ *   0. Subtasky (indent > 0) se drží hned za svým rodičem
  *   1. Overdue (dueDate < today)
  *   2. Priorita desc (🔺 → ⏫ → 🔼 → 🔽 → ⏬ → bez)
  *   3. Due date asc (s dueDate před bez)
  *   4. Text alfabeticky (cs locale)
+ *
+ * Pro grouping: rodiče se řadí mezi sebou normálně (overdue → priority →
+ * dueDate → text). Jejich subtasky jdou hned za nimi v původním pořadí
+ * (lineIndex ascending).
  */
-export function makeCompareTask(today: string): (a: Task, b: Task) => number {
+/**
+ * Find the root task by walking up the parentIndex chain.
+ * Uses `fullTasks` array for parentIndex lookups (indices are relative to it).
+ * For root tasks (parentIndex === undefined), returns the task itself.
+ */
+export function findRootTask(task: Task, fullTasks: Task[]): Task {
+  if (task.parentIndex === undefined) return task;
+  let current = task;
+  while (current.parentIndex !== undefined) {
+    current = fullTasks[current.parentIndex];
+  }
+  return current;
+}
+
+/**
+ * Sort key for a root task (used to compare groups).
+ * Returns a tuple: [overdueRank, priorityRank, dueDate, text]
+ */
+function rootSortKey(task: Task, today: string): [number, number, string, string] {
+  return [
+    isOverdue(task, today) ? 0 : 1,
+    priorityRank(task.priority),
+    task.dueDate ?? '9999-99-99',
+    task.text,
+  ];
+}
+
+/**
+ * Comparator pro řazení tasků uvnitř kvadrantu:
+ *   1. Tasks are grouped by their root parent
+ *   2. Within each group, root parent comes first, then subtasks by lineIndex
+ *   3. Groups are sorted by: overdue → priority → dueDate → text
+ *
+ * `fullTasks` is the complete (unfiltered) tasks array — needed because
+ * parentIndex values reference indices in that array, not in the filtered subset.
+ */
+export function makeCompareTask(today: string, fullTasks: Task[]): (a: Task, b: Task) => number {
   return (a, b) => {
-    const aOverdue = isOverdue(a, today);
-    const bOverdue = isOverdue(b, today);
-    if (aOverdue !== bOverdue) return aOverdue ? -1 : 1;
+    const aRoot = findRootTask(a, fullTasks);
+    const bRoot = findRootTask(b, fullTasks);
 
-    const pr = priorityRank(a.priority) - priorityRank(b.priority);
-    if (pr !== 0) return pr;
-
-    if (a.dueDate && b.dueDate) {
-      const cmp = a.dueDate.localeCompare(b.dueDate);
-      if (cmp !== 0) return cmp;
-    } else if (a.dueDate) {
-      return -1;
-    } else if (b.dueDate) {
-      return 1;
+    // Same group (same root parent)
+    if (aRoot === bRoot) {
+      // Root comes before its subtasks
+      if (a === aRoot) return -1;
+      if (b === bRoot) return 1;
+      // Both are subtasks — sort by lineIndex (original order in file)
+      return a.lineIndex - b.lineIndex;
     }
 
-    return a.text.localeCompare(b.text, 'cs');
+    // Different groups — sort by root task's sort key
+    const aKey = rootSortKey(aRoot, today);
+    const bKey = rootSortKey(bRoot, today);
+
+    for (let i = 0; i < aKey.length; i++) {
+      if (aKey[i] < bKey[i]) return -1;
+      if (aKey[i] > bKey[i]) return 1;
+    }
+    return 0;
   };
 }
 

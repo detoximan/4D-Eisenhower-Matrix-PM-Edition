@@ -1,8 +1,9 @@
 import { useDroppable } from '@dnd-kit/core';
 import type { PaneType } from 'obsidian';
-import { useState, type ReactNode } from 'react';
+import { useState, useMemo, type ReactNode } from 'react';
 import type { Priority, Quadrant as QuadrantKind, Task } from '../core/types.ts';
 import { QUADRANTS, QUADRANT_META } from '../core/types.ts';
+import type { SortMode } from '../core/taskUtils.ts';
 import { TaskCard } from './TaskCard.tsx';
 import { Quadrant } from './Quadrant.tsx';
 import { AddTaskInput } from './AddTaskInput.tsx';
@@ -34,9 +35,14 @@ type Props = {
   tasks: Task[];
   today: string;
   collapsed: Record<QuadrantKind, boolean>;
+  collapsedParents: Set<string>;
+  onToggleParentCollapse: (key: string) => void;
+  onCollapseTasks: (keys: string[]) => void;
+  onExpandTasks: (keys: string[]) => void;
   graceMap: Map<string, number>;
   activeTaskId: string | null;
   compact: boolean;
+  sortMode: SortMode;
   onToggleCollapsed: (q: QuadrantKind) => void;
   onToggleKanban: (q: QuadrantKind) => void;
   onToggleTask: (task: Task) => void;
@@ -75,6 +81,84 @@ export function KanbanView(props: Props) {
   const expandedTasks = byQuadrant[kanbanQuadrant];
   const bottom = QUADRANTS.filter((q) => q !== kanbanQuadrant);
 
+  // === Collapse logic — shared with the rest of the matrix via props ===
+  const collapsedParents = props.collapsedParents;
+
+  const hasSubtask = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of expandedTasks) {
+      if (t.indent > 0) {
+        const idx = expandedTasks.indexOf(t);
+        for (let i = idx - 1; i >= 0; i--) {
+          if (expandedTasks[i].indent < t.indent) {
+            set.add(`${expandedTasks[i].sourceFile}:${expandedTasks[i].lineIndex}`);
+            break;
+          }
+          if (expandedTasks[i].indent === 0) break;
+        }
+      }
+    }
+    return set;
+  }, [expandedTasks]);
+
+  // Numbering (same scheme as the grid): roots per project, subtasks per parent.
+  const numberByKey = useMemo(() => {
+    const map = new Map<string, number>();
+    const rootCountByProject = new Map<string, number>();
+    const subCountByParent = new Map<string, number>();
+    for (let i = 0; i < expandedTasks.length; i++) {
+      const t = expandedTasks[i];
+      const key = `${t.sourceFile}:${t.lineIndex}`;
+      if (t.indent === 0) {
+        const groupKey = t.projectKey ?? '__noproject__';
+        const n = (rootCountByProject.get(groupKey) ?? 0) + 1;
+        rootCountByProject.set(groupKey, n);
+        map.set(key, n);
+      } else {
+        let parentKey = '';
+        for (let j = i - 1; j >= 0; j--) {
+          if (expandedTasks[j].sourceFile === t.sourceFile && expandedTasks[j].indent < t.indent) {
+            parentKey = `${expandedTasks[j].sourceFile}:${expandedTasks[j].lineIndex}`;
+            break;
+          }
+        }
+        const n = (subCountByParent.get(parentKey) ?? 0) + 1;
+        subCountByParent.set(parentKey, n);
+        map.set(key, n);
+      }
+    }
+    return map;
+  }, [expandedTasks]);
+
+  const visibleExpandedTasks = useMemo(() => {
+    if (collapsedParents.size === 0) return expandedTasks;
+    const result: typeof expandedTasks = [];
+    let skipping = false;
+    let skipIndent = -1;
+    for (const t of expandedTasks) {
+      if (skipping) {
+        if (t.indent > skipIndent) continue;
+        skipping = false;
+      }
+      const key = `${t.sourceFile}:${t.lineIndex}`;
+      result.push(t);
+      if (collapsedParents.has(key)) {
+        skipping = true;
+        skipIndent = t.indent;
+      }
+    }
+    return result;
+  }, [expandedTasks, collapsedParents]);
+
+  // Drives the header "Collapse tasks" button for the focused quadrant.
+  const collapsibleKeys = useMemo(() => [...hasSubtask], [hasSubtask]);
+  const allTasksCollapsed =
+    collapsibleKeys.length > 0 && collapsibleKeys.every((k) => collapsedParents.has(k));
+  const toggleAllTasks = () => {
+    if (allTasksCollapsed) props.onExpandTasks(collapsibleKeys);
+    else props.onCollapseTasks(collapsibleKeys);
+  };
+
   const renderCard = (t: Task): ReactNode => {
     const key = `${t.sourceFile}:${t.lineIndex}`;
     return (
@@ -85,6 +169,11 @@ export function KanbanView(props: Props) {
         graceExpiresAt={props.graceMap.get(key)}
         isActiveDrag={props.activeTaskId === key}
         compact={props.compact}
+        sortable={props.sortMode === 'manual'}
+        number={numberByKey.get(key)}
+        isCollapsible={hasSubtask.has(key)}
+        isCollapsed={collapsedParents.has(key)}
+        onToggleCollapse={() => props.onToggleParentCollapse(key)}
         onToggle={() => props.onToggleTask(t)}
         onSetStatus={(s) => props.onSetStatus(t, s)}
         onSetDueDate={(d) => props.onSetDueDate(t, d)}
@@ -108,7 +197,19 @@ export function KanbanView(props: Props) {
             <p>{meta.subtitle}</p>
           </div>
           <div className="em-quadrant-actions">
-            <span className="em-quadrant-count">{expandedTasks.length}</span>
+            {collapsibleKeys.length > 0 && (
+              <button
+                type="button"
+                onClick={toggleAllTasks}
+                className="em-quadrant-collapse-tasks"
+                title={allTasksCollapsed ? 'Expand all subtasks in this quadrant' : 'Collapse all subtasks in this quadrant'}
+                aria-label={allTasksCollapsed ? 'Expand all subtasks' : 'Collapse all subtasks'}
+              >
+                <span className="em-cct-tri">{allTasksCollapsed ? '▶' : '▼'}</span>
+                <span className="em-cct-lbl">{allTasksCollapsed ? 'Expand' : 'Collapse'}<br />tasks</span>
+              </button>
+            )}
+            <span className="em-quadrant-count">{visibleExpandedTasks.length}</span>
             <button
               type="button"
               className="em-kanban-btn em-kanban-back"
@@ -127,7 +228,7 @@ export function KanbanView(props: Props) {
               key={col.key}
               col={col}
               quadrant={kanbanQuadrant}
-              tasks={expandedTasks.filter((t) => columnKeyForStatus(t.status) === col.key)}
+              tasks={visibleExpandedTasks.filter((t) => columnKeyForStatus(t.status) === col.key)}
               renderCard={renderCard}
               onAddTask={props.onAddTask}
               createTagSuggest={props.createTagSuggest}
@@ -144,9 +245,14 @@ export function KanbanView(props: Props) {
             tasks={byQuadrant[q]}
             today={props.today}
             collapsed={props.collapsed[q]}
+            collapsedParents={props.collapsedParents}
+            onToggleParentCollapse={props.onToggleParentCollapse}
+            onCollapseTasks={props.onCollapseTasks}
+            onExpandTasks={props.onExpandTasks}
             graceMap={props.graceMap}
             activeTaskId={props.activeTaskId}
             compact={props.compact}
+            sortMode={props.sortMode}
             kanbanActive={false}
             onToggleKanban={() => props.onToggleKanban(q)}
             onToggleCollapsed={() => props.onToggleCollapsed(q)}

@@ -14,6 +14,7 @@ function task(dueDate?: string): Task {
     dueDate,
     sourceFile: 'f.md',
     isFromDnes: false,
+    indent: 0,
   };
 }
 

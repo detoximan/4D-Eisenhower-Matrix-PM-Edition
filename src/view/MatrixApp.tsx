@@ -21,12 +21,16 @@ import type { Priority, Quadrant, Task } from '../core/types.ts';
 import { QUADRANTS, isClosedStatus } from '../core/types.ts';
 import {
   extractAllContextTags,
+  findSubtaskBlockRange,
+  findRootTask,
+  canReorder,
   formatDateISO,
   makeCompareTask,
   matchesDueFilter,
   matchesFilter,
   UNTAGGED_FILTER,
   type DueFilter,
+  type SortMode,
 } from '../core/taskUtils.ts';
 import { Matrix } from '../components/Matrix.tsx';
 import { KanbanView } from '../components/KanbanView.tsx';
@@ -44,6 +48,16 @@ type Props = {
 
 function taskKey(sourceFile: string, lineIndex: number): string {
   return `${sourceFile}:${lineIndex}`;
+}
+
+// Canonical status char of the Kanban column a given status belongs to.
+// Mirrors columnKeyForStatus in KanbanView (forwarded > lives in Scheduled,
+// canceled - lives in Done).
+function kanbanColumnStatus(s: string): string {
+  if (s === '/') return '/';
+  if (s === '<' || s === '>') return '<';
+  if (s.toLowerCase() === 'x' || s === '-') return 'x';
+  return ' ';
 }
 
 /**
@@ -126,6 +140,8 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   const [kanbanQuadrant, setKanbanQuadrant] = useState<Quadrant | null>(
     plugin.settings.kanbanQuadrant,
   );
+  const [sortMode, setSortMode] = useState<SortMode>(plugin.settings.sortMode);
+  const [collapsedParents, setCollapsedParents] = useState<Set<string>>(() => new Set());
   const [dayChangedBanner, setDayChangedBanner] = useState<string | null>(() => {
     const last = plugin.settings.lastOpenedDate;
     return last && last !== today ? last : null;
@@ -177,6 +193,11 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     plugin.settings.kanbanQuadrant = kanbanQuadrant;
     void plugin.saveSettings();
   }, [kanbanQuadrant, plugin]);
+
+  useEffect(() => {
+    plugin.settings.sortMode = sortMode;
+    void plugin.saveSettings();
+  }, [sortMode, plugin]);
 
   // === Data fetching ===
   const refetchTimerRef = useRef<number | null>(null);
@@ -385,22 +406,98 @@ export function MatrixApp({ app, repo, plugin }: Props) {
 
   // === Derived state ===
   const visibleTasks = useMemo(
-    () =>
-      tasks.filter((t) => {
-        if (!matchesFilter(t, selectedTags)) return false;
-        if (!matchesDueFilter(t, dueFilter, today, date)) return false;
-        if (showCompleted) return true;
-        // "Closed" = done ([x]) i canceled ([-]) — oba schované, pokud
-        // uživatel nezapne přepínač "Done" v hlavičce.
-        if (!isClosedStatus(t.status)) return true;
-        return graceMap.has(taskKey(t.sourceFile, t.lineIndex));
-      }),
+    () => {
+      // First pass: filter root tasks and subtasks with their own tags
+      const passed = new Set<number>();
+      for (let i = 0; i < tasks.length; i++) {
+        const t = tasks[i];
+        if (!matchesFilter(t, selectedTags)) continue;
+        if (!matchesDueFilter(t, dueFilter, today, date)) continue;
+        if (!showCompleted) {
+          if (isClosedStatus(t.status) && !graceMap.has(taskKey(t.sourceFile, t.lineIndex))) continue;
+        }
+        passed.add(i);
+      }
+
+      // Second pass: include subtasks whose parent passed the filter
+      for (let i = 0; i < tasks.length; i++) {
+        if (passed.has(i)) continue;
+        const t = tasks[i];
+        if (t.parentIndex !== undefined && passed.has(t.parentIndex)) {
+          // Inherit due date filter from parent (subtask may not have its own dueDate)
+          if (!showCompleted && isClosedStatus(t.status) && !graceMap.has(taskKey(t.sourceFile, t.lineIndex))) continue;
+          passed.add(i);
+        }
+      }
+
+      return tasks.filter((_, i) => passed.has(i));
+    },
     [tasks, selectedTags, dueFilter, today, date, showCompleted, graceMap],
   );
 
+  // Rank each root task within its OWN quadrant for its project, ordered by the
+  // task's position in the project file. Ranks restart at 1 for every
+  // (quadrant, project) pair, so numbering is per-quadrant (not project-wide)
+  // and stays aligned across projects when interleaving.
+  const quadrantProjectRank = useMemo(() => {
+    const groups = new Map<string, Task[]>();
+    for (const t of visibleTasks) {
+      if (t.indent !== 0) continue;
+      if (t.projectKey === undefined) continue;
+      const groupKey = `${t.quadrant}|${t.projectKey}`;
+      let arr = groups.get(groupKey);
+      if (!arr) {
+        arr = [];
+        groups.set(groupKey, arr);
+      }
+      arr.push(t);
+    }
+    const ranks = new Map<string, number>();
+    for (const arr of groups.values()) {
+      arr.sort((a, b) => (a.projectLinkLine ?? 0) - (b.projectLinkLine ?? 0));
+      arr.forEach((t, i) => ranks.set(taskKey(t.sourceFile, t.lineIndex), i + 1));
+    }
+    return ranks;
+  }, [visibleTasks]);
+
   const sortedVisibleTasks = useMemo(
-    () => [...visibleTasks].sort(makeCompareTask(today)),
-    [visibleTasks, today],
+    () => {
+      const arr = [...visibleTasks];
+      const autoCompare = makeCompareTask(today, tasks);
+      arr.sort((a, b) => {
+        const aRoot = findRootTask(a, tasks);
+        const bRoot = findRootTask(b, tasks);
+        // Keep each subtask directly under its own root.
+        if (aRoot === bRoot) {
+          if (a.indent === 0 && b.indent > 0) return -1;
+          if (b.indent === 0 && a.indent > 0) return 1;
+          return a.lineIndex - b.lineIndex;
+        }
+        // Primary order for ROOT tasks: their rank WITHIN their own quadrant for
+        // their project (1,2,3\u2026 restarting per quadrant per project). Puts all
+        // rank-1 tasks first, then rank-2, etc., aligned across projects, the
+        // same in auto and manual modes.
+        const ar = quadrantProjectRank.get(taskKey(aRoot.sourceFile, aRoot.lineIndex));
+        const br = quadrantProjectRank.get(taskKey(bRoot.sourceFile, bRoot.lineIndex));
+        if (ar !== undefined && br !== undefined) {
+          if (ar !== br) return ar - br;
+        } else if (ar !== undefined) {
+          return -1;
+        } else if (br !== undefined) {
+          return 1;
+        }
+        // Same rank, or tasks without a project: fall back to the sort mode.
+        if (sortMode === 'manual') {
+          if (aRoot.sourceFile !== bRoot.sourceFile) {
+            return aRoot.sourceFile.localeCompare(bRoot.sourceFile);
+          }
+          return aRoot.lineIndex - bRoot.lineIndex;
+        }
+        return autoCompare(aRoot, bRoot);
+      });
+      return arr;
+    },
+    [visibleTasks, today, tasks, sortMode, quadrantProjectRank],
   );
 
   const availableTags = useMemo(
@@ -464,6 +561,63 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     setCollapsed(
       Object.fromEntries(QUADRANTS.map((q) => [q, false])) as Record<Quadrant, boolean>,
     );
+  }, []);
+
+  // === Subtask (parent) collapse — lifted here so one global control and each
+  // quadrant's button share a single source of truth across the whole matrix. ===
+  const toggleParentCollapse = useCallback((key: string) => {
+    setCollapsedParents((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
+  const collapseTaskKeys = useCallback((keys: string[]) => {
+    setCollapsedParents((prev) => {
+      if (keys.length === 0) return prev;
+      const next = new Set(prev);
+      for (const k of keys) next.add(k);
+      return next;
+    });
+  }, []);
+
+  const expandTaskKeys = useCallback((keys: string[]) => {
+    setCollapsedParents((prev) => {
+      if (keys.length === 0) return prev;
+      const next = new Set(prev);
+      for (const k of keys) next.delete(k);
+      return next;
+    });
+  }, []);
+
+  // All root tasks (anywhere in the matrix) that actually have subtasks.
+  const collapsibleParentKeys = useMemo(() => {
+    const rootKeyByFile = new Map<string, string>();
+    for (const t of sortedVisibleTasks) {
+      if (t.indent === 0) rootKeyByFile.set(t.sourceFile, taskKey(t.sourceFile, t.lineIndex));
+    }
+    const set = new Set<string>();
+    for (const t of sortedVisibleTasks) {
+      if (t.indent > 0) {
+        const rk = rootKeyByFile.get(t.sourceFile);
+        if (rk) set.add(rk);
+      }
+    }
+    return [...set];
+  }, [sortedVisibleTasks]);
+
+  const allTasksCollapsed =
+    collapsibleParentKeys.length > 0 &&
+    collapsibleParentKeys.every((k) => collapsedParents.has(k));
+
+  const collapseAllTasks = useCallback(() => {
+    collapseTaskKeys(collapsibleParentKeys);
+  }, [collapseTaskKeys, collapsibleParentKeys]);
+
+  const expandAllTasks = useCallback(() => {
+    setCollapsedParents(new Set());
   }, []);
 
   // Kanban: klik na ikonu zvoleného kvadrantu vypne (zpět na mřížku),
@@ -555,6 +709,35 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     [repo, today, applyLocalStatus],
   );
 
+  // Reorder task block (manual sort mode): move task+subtasks to new position
+  const handleReorder = useCallback(
+    async (
+      sourceFile: string,
+      sourceStart: number,
+      sourceEnd: number,
+      targetLine: number,
+    ) => {
+      try {
+        await repo.reorderTaskBlock(sourceFile, sourceStart, sourceEnd, targetLine);
+      } catch (err) {
+        showError(`Reorder failed: ${String((err as Error).message ?? err)}`);
+      }
+    },
+    [repo],
+  );
+
+  // Reorder a parent/root task: persist its new position into the project file.
+  const handleReorderProject = useCallback(
+    async (projectFile: string, sourceLine: number, targetLine: number) => {
+      try {
+        await repo.reorderProjectLink(projectFile, sourceLine, targetLine);
+      } catch (err) {
+        showError(`Reorder failed: ${String((err as Error).message ?? err)}`);
+      }
+    },
+    [repo],
+  );
+
   const onDragEnd = useCallback(
     async (e: DragEndEvent) => {
       setActiveTask(null);
@@ -578,12 +761,71 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         return;
       }
 
-      // Jinak je overId Quadrant kind → změna kvadrantu (jako dosud).
+      // Kanban: a full status column hides its drop area behind cards, so a
+      // drop often lands ON a card. If that card is in the focused (main)
+      // quadrant, treat it as a drop into that card's status column.
+      if (kanbanQuadrant) {
+        const overTaskK = tasks.find((t) => taskKey(t.sourceFile, t.lineIndex) === overId);
+        if (overTaskK && overTaskK.quadrant === kanbanQuadrant) {
+          const targetStatus = kanbanColumnStatus(overTaskK.status);
+          if (dragged.quadrant !== kanbanQuadrant) {
+            await handleMoveAndSetStatus(dragged, kanbanQuadrant, targetStatus);
+          } else if (dragged.status !== targetStatus) {
+            await handleSetStatus(dragged, targetStatus);
+          }
+          return;
+        }
+      }
+
+      // Drop on another task card (not a quadrant droppable).
+      if (!QUADRANTS.includes(overId as Quadrant)) {
+        const overTask = tasks.find((t) => taskKey(t.sourceFile, t.lineIndex) === overId);
+        if (overTask) {
+          // Different quadrant -> move the task to that quadrant.
+          if (overTask.quadrant !== dragged.quadrant) {
+            await handleMove(dragged, overTask.quadrant);
+            return;
+          }
+          // Same quadrant -> reorder.
+          if (dragged.indent === 0 && overTask.indent === 0) {
+            // Root/parent tasks: persist order into the shared project file.
+            if (
+              dragged.projectKey &&
+              dragged.projectKey === overTask.projectKey &&
+              dragged.projectLinkLine !== undefined &&
+              overTask.projectLinkLine !== undefined
+            ) {
+              const srcLine = dragged.projectLinkLine;
+              const tgtLine = overTask.projectLinkLine;
+              const targetLine = srcLine < tgtLine ? tgtLine + 1 : tgtLine;
+              if (sortMode !== 'manual') setSortMode('manual');
+              await handleReorderProject(dragged.projectKey, srcLine, targetLine);
+            }
+            // No shared project file -> order can't be persisted; do nothing.
+            return;
+          }
+          // Subtasks: reorder within their parent (in the task file).
+          if (canReorder(dragged, overTask, tasks)) {
+            const [srcStart, srcEnd] = findSubtaskBlockRange(dragged, tasks);
+            const [tgtStart, tgtEnd] = findSubtaskBlockRange(overTask, tasks);
+            const targetLine = srcStart < tgtStart ? tgtEnd + 1 : tgtStart;
+            // Manual reordering only makes sense in manual sort mode -
+            // switch automatically so the new order is not re-sorted away.
+            if (sortMode !== 'manual') setSortMode('manual');
+            await handleReorder(dragged.sourceFile, srcStart, srcEnd, targetLine);
+            return;
+          }
+          // Same quadrant but cannot reorder -> nothing to do.
+          return;
+        }
+      }
+
+      // Drop on quadrant droppable → change quadrant.
       if (QUADRANTS.includes(overId as Quadrant)) {
         await handleMove(dragged, overId as Quadrant);
       }
     },
-    [tasks, handleMove, handleSetStatus, handleMoveAndSetStatus, kanbanQuadrant],
+    [tasks, handleMove, handleSetStatus, handleMoveAndSetStatus, handleReorder, handleReorderProject, kanbanQuadrant, sortMode, setSortMode],
   );
 
   const isPastOrFuture = date !== today;
@@ -604,6 +846,14 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       >
         {anyCollapsed ? 'Expand all' : 'Collapse all'}
       </button>
+      <button
+        type="button"
+        onClick={allTasksCollapsed ? expandAllTasks : collapseAllTasks}
+        className="em-btn-link"
+        title={allTasksCollapsed ? 'Expand all subtasks everywhere' : 'Collapse all subtasks everywhere'}
+      >
+        {allTasksCollapsed ? '▶ Expand all tasks' : '▼ Collapse all tasks'}
+      </button>
       <label className="em-toggle">
         <input
           type="checkbox"
@@ -620,6 +870,14 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         />
         <span>Compact</span>
       </label>
+      <button
+        type="button"
+        onClick={() => setSortMode((prev) => (prev === 'auto' ? 'manual' : 'auto'))}
+        className={`em-btn-link ${sortMode === 'manual' ? 'em-sort-manual' : ''}`}
+        title={sortMode === 'auto' ? 'Auto sort (priority/due) — click for manual order' : 'Manual order (file) — click for auto sort'}
+      >
+        {sortMode === 'auto' ? '⬆⬇ Auto' : '☰ Manual'}
+      </button>
     </>
   );
 
@@ -740,12 +998,17 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         <div className="em-app-body">
         {effectiveKanban ? (
           <KanbanView
+            collapsedParents={collapsedParents}
+            onToggleParentCollapse={toggleParentCollapse}
+            onCollapseTasks={collapseTaskKeys}
+            onExpandTasks={expandTaskKeys}
             kanbanQuadrant={effectiveKanban}
             tasks={sortedVisibleTasks}
             today={today}
             collapsed={collapsed}
             graceMap={graceMap}
             compact={compactMode}
+            sortMode={sortMode}
             activeTaskId={
               activeTask ? taskKey(activeTask.sourceFile, activeTask.lineIndex) : null
             }
@@ -762,11 +1025,16 @@ export function MatrixApp({ app, repo, plugin }: Props) {
           />
         ) : (
           <Matrix
+            collapsedParents={collapsedParents}
+            onToggleParentCollapse={toggleParentCollapse}
+            onCollapseTasks={collapseTaskKeys}
+            onExpandTasks={expandTaskKeys}
             tasks={sortedVisibleTasks}
             today={today}
             collapsed={collapsed}
             graceMap={graceMap}
             compact={compactMode}
+            sortMode={sortMode}
             activeTaskId={
               activeTask ? taskKey(activeTask.sourceFile, activeTask.lineIndex) : null
             }
